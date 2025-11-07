@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/2020/10/08/eDokumenty" xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/" xsi:schemaLocation="http://crd.gov.pl/wzor/2023/06/29/12648/ https://crd.gov.pl/wzor/2023/06/29/12648/schemat.xsd">
+  <Naglowek>
+    <KodFormularza kodSystemowy="FA (2)" wersjaSchemy="1-0E">FA</KodFormularza>
+    <WariantFormularza>2</WariantFormularza>
+    <DataWytworzeniaFa>2025-11-06T22:11:31.0000000Z</DataWytworzeniaFa>
+    <SystemInfo>Aplikacja Podatnika KSeF</SystemInfo>
+  </Naglowek>
+  <Podmiot1>
+    <DaneIdentyfikacyjne>
+      <NIP>6783120981</NIP>
+      <Nazwa>Magda-trans</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>Fabryczna 20A</AdresL1>
+      <AdresL2>31-553 Kraków</AdresL2>
+    </Adres>
+    <DaneKontaktowe>
+      <Email>iza.skowronska@magda-trans.pl</Email>
+	  <Telefon>+48668892167</Telefon>
+	</DaneKontaktowe>
+  </Podmiot1>
+  <Podmiot2>
+    <DaneIdentyfikacyjne>
+      <NIP>1251620344</NIP>
+      <Nazwa>MAT DANIA</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>Aleja Jana Pawła II 26</AdresL1>
+      <AdresL2>05-250 Słupno</AdresL2>
+    </Adres>
+    <DaneKontaktowe>
+      <Email>mat-dania@magda-trans.pl</Email>
+	  <Telefon>+48668892167</Telefon>
+	</DaneKontaktowe>
+  </Podmiot2>
+  <Fa>
+    <KodWaluty>PLN</KodWaluty>
+    <P_1>2025-11-06</P_1>
+    <P_1M>Kraków</P_1M>
+    <P_2>S/1/11/2025</P_2>
+    <P_6>2025-11-05</P_6>
+    <P_13_1>950.00</P_13_1>
+    <P_14_1>218.50</P_14_1>
+    <P_15>1168.50</P_15>
+    <RodzajFaktury>VAT</RodzajFaktury>
+    <FaWiersz>
+      <NrWierszaFa>1</NrWierszaFa>
+      <P_7>Usługa spedycyjna za transport towarów z Nowa Sól 67-100 do Słupno k. Radzymina 05-250</P_7>
+      <P_8A>usługa</P_8A>
+      <P_8B>1</P_8B>
+      <P_9A>950.00</P_9A>
+      <P_11>950.00</P_11>
+      <P_12>23</P_12>
+    </FaWiersz>
+    <Platnosc>
+        <FormaPlatnosci>6</FormaPlatnosci>
+        <DataZaplaty>2025-12-04</DataZaplaty>
+    </Platnosc>
+  </Fa>
+</Faktura>
