@@ -11,7 +11,7 @@
 ## Installation
 
 ```bash
-go get github.com/yourusername/goksef
+go get github.com/onit-soft/goksef
 ```
 
 ## Usage
@@ -20,11 +20,11 @@ go get github.com/yourusername/goksef
 package main
 
 import (
-    "github.com/yourusername/goksef"
+    "github.com/onit-soft/goksef/goksef"
 )
 
 func main() {
-    client := goksef.NewClient("")
+    client := goksef.NewClient("https://ksef-test.mf.gov.pl")
     // Use the client to interact with the KSeF API
 }
 ```

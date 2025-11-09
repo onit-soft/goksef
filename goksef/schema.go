@@ -56,25 +56,35 @@ type InvoiceListResponse struct {
 }
 
 type Invoice struct {
-	KsefNumber           string     `json:"ksefNumber"`
-	InvoiceNumber        string     `json:"invoiceNumber"`
-	IssueDate            string     `json:"issueDate"`     // "YYYY-MM-DD"
-	InvoicingDate        time.Time  `json:"invoicingDate"` // e.g. "2025-08-28T09:22:13.388+00:00"
-	AcquisitionDate      time.Time  `json:"acquisitionDate"`
-	PermanentStorageDate time.Time  `json:"permanentStorageDate"`
-	Seller               Party      `json:"seller"`
-	Buyer                Party      `json:"buyer"`
-	NetAmount            float64    `json:"netAmount"`
-	GrossAmount          float64    `json:"grossAmount"`
-	VATAmount            float64    `json:"vatAmount"`
-	Currency             string     `json:"currency"`
-	InvoicingMode        string     `json:"invoicingMode"`
-	InvoiceType          string     `json:"invoiceType"`
-	FormCode             FormCode   `json:"formCode"`
-	IsSelfInvoicing      bool       `json:"isSelfInvoicing"`
-	HasAttachment        bool       `json:"hasAttachment"`
-	InvoiceHash          string     `json:"invoiceHash"`
-	ThirdSubjects        []Subject3 `json:"thirdSubjects"`
+	OrdinalNumber        int32         `json:"ordinalNumber"`
+	InvoiceNumber        string        `json:"invoiceNumber"`
+	KsefNumber           string        `json:"ksefNumber"`
+	ReferenceNumber      string        `json:"referenceNumber"`
+	InvoiceFileName      string        `json:"invoiceFileName"`
+	IssueDate            string        `json:"issueDate"`     // "YYYY-MM-DD"
+	InvoicingDate        time.Time     `json:"invoicingDate"` // e.g. "2025-08-28T09:22:13.388+00:00"
+	AcquisitionDate      time.Time     `json:"acquisitionDate"`
+	PermanentStorageDate time.Time     `json:"permanentStorageDate"`
+	Seller               Party         `json:"seller"`
+	Buyer                Party         `json:"buyer"`
+	NetAmount            float64       `json:"netAmount"`
+	GrossAmount          float64       `json:"grossAmount"`
+	VATAmount            float64       `json:"vatAmount"`
+	Currency             string        `json:"currency"`
+	InvoicingMode        string        `json:"invoicingMode"`
+	InvoiceType          string        `json:"invoiceType"`
+	FormCode             FormCode      `json:"formCode"`
+	IsSelfInvoicing      bool          `json:"isSelfInvoicing"`
+	HasAttachment        bool          `json:"hasAttachment"`
+	InvoiceHash          string        `json:"invoiceHash"`
+	ThirdSubjects        []Subject3    `json:"thirdSubjects"`
+	Status               InvoiceStatus `json:"status"`
+}
+
+type InvoiceStatus struct {
+	Code        int32    `json:"code"`
+	Description string   `json:"description"`
+	Details     []string `json:"details"`
 }
 
 type Party struct {
@@ -98,4 +108,132 @@ type Subject3 struct {
 	Identifier Identifier `json:"identifier"`
 	Name       string     `json:"name"`
 	Role       int        `json:"role"`
+}
+
+type PublicKeyCertificate struct {
+	Certificate string   `json:"certificate"`
+	ValidFrom   string   `json:"validFrom"`
+	ValidTo     string   `json:"validTo"`
+	Usage       []string `json:"usage"`
+}
+
+type OpenOnlineSessionRequest struct {
+	FormCode   FormCode   `json:"formCode"`
+	Encryption Encryption `json:"encryption"`
+}
+
+type OpenOnlineSessionResponse struct {
+	ReferenceNumber string `json:"referenceNumber"`
+	ValidUntil      string `json:"validUntil"`
+}
+
+type Encryption struct {
+	EncryptedSymetricKey string `json:"encryptedSymmetricKey"`
+	InitializationVector string `json:"initializationVector"`
+}
+
+type SendInvoiceRequest struct {
+	InvoiceHash             string `json:"invoiceHash"`
+	InvoiceSize             int64  `json:"invoiceSize"`
+	EncryptedInvoiceHash    string `json:"encryptedInvoiceHash"`
+	EncryptedInvoiceSize    int64  `json:"encryptedInvoiceSize"`
+	EncryptedInvoiceContent []byte `json:"encryptedInvoiceContent"`
+	OfflineMode             bool   `json:"offlineMode"`
+	HashOfCorrectedInvoice  string `json:"hashOfCorrectedInvoice,omitempty"`
+}
+
+type SendInvoices struct {
+	InvoiceContents  [][]byte
+	CorrectedInvoice [][]byte
+	FormCode         FormCode
+	OfflineMode      bool
+}
+
+type SendInvoiceResponse struct {
+	ReferenceNumber string `json:"referenceNumber"`
+}
+
+type ListSessionsResponse struct {
+	Sessions []Session `json:"sessions"`
+}
+
+type Session struct {
+	ReferenceNumber        string        `json:"referenceNumber"`
+	Status                 SessionStatus `json:"status"`
+	DateCreated            string        `json:"dateCreated"`
+	DateUpdated            string        `json:"dateUpdated"`
+	ValidUntil             string        `json:"validUntil"`
+	TotalInvoiceCount      int32         `json:"totalInvoiceCount"`
+	SuccessfulInvoiceCount int32         `json:"successfulInvoiceCount"`
+	FailedInvoiceCount     int32         `json:"failedInvoiceCount"`
+}
+
+type SessionStatus struct {
+	Code        int32  `json:"code"`
+	Description string `json:"description"`
+	Details     string `json:"details"`
+}
+
+type ListFailedInvoicesResponse struct {
+	Invoices []Invoice `json:"invoices"`
+}
+
+type InvoiceXMLTemplate struct {
+	Header           HeaderXMLTemplate
+	Issuer           CompanyXMLTemplate
+	Payer            CompanyXMLTemplate
+	SalesInformation SalesInformationXMLTemplate
+}
+
+type CompanyXMLTemplate struct {
+	VATID        string // VAT identifier
+	Name         string
+	CountryCode  string // e.g. "PL"
+	Email        string
+	Phone        string
+	AddressLine1 string
+	AddressLine2 string
+}
+
+type HeaderXMLTemplate struct {
+	Code          string
+	SchemaVersion string
+	IssueDate     string
+}
+
+type SalesInformationXMLTemplate struct {
+	Currency      string
+	IssueDate     string // "YYYY-MM-DD"
+	IssuePlace    string
+	InvoiceNumber string
+	ExecutionDate string // "YYYY-MM-DD"
+	NettoPrice    float32
+	VatPrice      float32
+	BruttoPrice   float32
+	CashMethod    bool
+	SelfBilling   bool
+	ReverseCharge bool
+	SplitPayment  bool
+	TaxExemption  TaxExemptionXMLTemplate
+	Type          string
+	Rows          []SalesInformationRowXMLTemplate
+}
+
+type TaxExemptionXMLTemplate struct {
+	Exception      bool
+	ActLegalBasis  string
+	DirectiveBasis string
+	OtherBasis     string
+}
+
+type SalesInformationRowXMLTemplate struct {
+	ItemNumber   int32
+	Note         string
+	UnitType     string
+	Quantity     float32
+	NetUnitPrice float32
+	NetValue     float32
+	VatRate      string
+	VatValue     float32
+	BruttoValue  float32
 }
