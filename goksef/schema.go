@@ -27,14 +27,24 @@ type AccessToken struct {
 }
 
 type Filter struct {
-	SubjectType   string    `json:"subjectType,omitempty"`
-	DateRange     DateRange `json:"dateRange,omitempty"`
-	Amount        *Amount   `json:"amount,omitempty"`
-	CurrencyCodes []string  `json:"currencyCodes,omitempty"`
-	InvoicingMode string    `json:"invoicingMode,omitempty"`
-	FormType      string    `json:"formType,omitempty"`
-	InvoiceTypes  []string  `json:"invoiceTypes,omitempty"`
-	HasAttachment bool      `json:"hasAttachment,omitempty"`
+	SubjectType     string           `json:"subjectType,omitempty"`
+	DateRange       DateRange        `json:"dateRange,omitempty"`
+	Amount          *Amount          `json:"amount,omitempty"`
+	CurrencyCodes   []string         `json:"currencyCodes,omitempty"`
+	InvoicingMode   string           `json:"invoicingMode,omitempty"`
+	FormType        string           `json:"formType,omitempty"`
+	InvoiceTypes    []string         `json:"invoiceTypes,omitempty"`
+	HasAttachment   bool             `json:"hasAttachment,omitempty"`
+	KsefNumber      string           `json:"ksefNumber,omitempty"`
+	InvoiceNumber   string           `json:"invoiceNumber,omitempty"`
+	SellerNip       string           `json:"sellerNip,omitempty"`
+	BuyerIdentifier *BuyerIdentifier `json:"buyerIdentifier,omitempty"`
+	IsSelfInvoicing bool             `json:"isSelfInvoicing,omitempty"`
+}
+
+type BuyerIdentifier struct {
+	Type  string `json:"type,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type DateRange struct {
