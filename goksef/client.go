@@ -2,7 +2,7 @@ package goksef
 
 import (
 	"bytes"
-	"crypto/rsa"
+	"crypto"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
@@ -15,7 +15,7 @@ import (
 )
 
 type Client interface {
-	WithKeyPair(cert *x509.Certificate, priv *rsa.PrivateKey) Client
+	WithKeyPair(cert *x509.Certificate, signer crypto.Signer) Client
 	WithOrganizationName(organizationName string) Client
 	WithVatID(vatID string) Client
 	WithCommonName(commonName string) Client
@@ -49,8 +49,8 @@ type client struct {
 	accessToken string
 	validUntil  *time.Time
 
-	cert *x509.Certificate
-	priv *rsa.PrivateKey
+	cert   *x509.Certificate
+	signer crypto.Signer
 }
 
 func NewClient(baseURL string) Client {
@@ -60,9 +60,9 @@ func NewClient(baseURL string) Client {
 	}
 }
 
-func (c *client) WithKeyPair(cert *x509.Certificate, priv *rsa.PrivateKey) Client {
+func (c *client) WithKeyPair(cert *x509.Certificate, signer crypto.Signer) Client {
 	c.cert = cert
-	c.priv = priv
+	c.signer = signer
 	return c
 }
 
@@ -113,7 +113,7 @@ func (c *client) UseSelfSigned() error {
 		return err
 	}
 
-	c.priv = priv
+	c.signer = priv
 	c.cert = cert
 	return nil
 }
@@ -376,7 +376,7 @@ func (k *client) refreshAuthToken() error {
 		return err
 	}
 
-	signedAuthToken, err := xades.Sign(*authToken, k.cert, k.priv)
+	signedAuthToken, err := xades.Sign(*authToken, k.cert, k.signer)
 	if err != nil {
 		return err
 	}

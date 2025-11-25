@@ -3,7 +3,6 @@ package xades
 import (
 	"crypto"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
@@ -70,7 +69,7 @@ func buildReference(uri string, digestMethod string, transforms []string, digest
 	return ref
 }
 
-func Sign(authRequest AuthTokenRequest, cert *x509.Certificate, priv *rsa.PrivateKey) ([]byte, error) {
+func Sign(authRequest AuthTokenRequest, cert *x509.Certificate, signer crypto.Signer) ([]byte, error) {
 	serialized, err := xml.Marshal(authRequest)
 	if err != nil {
 		return nil, err
@@ -191,10 +190,11 @@ func Sign(authRequest AuthTokenRequest, cert *x509.Certificate, priv *rsa.Privat
 		return nil, err
 	}
 	h := sha256.Sum256(canonSI)
-	sigRaw, err := rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA256, h[:])
-	if err != nil {
-		return nil, err
-	}
+	sigRaw, err := signer.Sign(rand.Reader, h[:], crypto.SHA256)
+	// sigRaw, err := rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA256, h[:])
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	sig.FindElement("./ds:SignatureValue").SetText(base64.StdEncoding.EncodeToString(sigRaw))
 
