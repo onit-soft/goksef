@@ -7,6 +7,12 @@ type AuthChallange struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type AuthKSEFTokenRequest struct {
+	Challange         string            `json:"challenge"`
+	ContextIdentifier ContextIdentifier `json:"contextIdentifier"`
+	EncryptedToken    string            `json:"encryptedToken"`
+}
+
 type AuthTokenResponse struct {
 	ReferenceNumber string    `json:"referenceNumber"`
 	AuthToken       AuthToken `json:"authenticationToken"`
@@ -246,4 +252,9 @@ type SalesInformationRowXMLTemplate struct {
 	VatRate      string
 	VatValue     float32
 	BruttoValue  float32
+}
+
+type ContextIdentifier struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }

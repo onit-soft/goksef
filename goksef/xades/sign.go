@@ -2,12 +2,17 @@ package xades
 
 import (
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/asn1"
 	"encoding/base64"
 	"encoding/xml"
+	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/beevik/etree"
@@ -18,14 +23,20 @@ const (
 	nsDS    = "http://www.w3.org/2000/09/xmldsig#"
 	nsXAdES = "http://uri.etsi.org/01903/v1.3.2#"
 
-	algC14NExclusive = "http://www.w3.org/2001/10/xml-exc-c14n#"
-	algSigRSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-	algDigestSHA256  = "http://www.w3.org/2001/04/xmlenc#sha256"
+	algC14NExclusive   = "http://www.w3.org/2001/10/xml-exc-c14n#"
+	algSigRSA_SHA256   = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+	algSigECDSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
+	algDigestSHA256    = "http://www.w3.org/2001/04/xmlenc#sha256"
 
 	transformEnveloped = "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
 
 	xadesTypeSignedProps = "http://uri.etsi.org/01903#SignedProperties"
 )
+
+// ecdsaSignature represents the ASN.1 structure of an ECDSA signature
+type ecdsaSignature struct {
+	R, S *big.Int
+}
 
 func c14nExclusive(el *etree.Element) ([]byte, error) {
 	can := dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
@@ -67,6 +78,53 @@ func buildReference(uri string, digestMethod string, transforms []string, digest
 	ref.AddChild(dm)
 	ref.AddChild(dv)
 	return ref
+}
+
+// getSignatureAlgorithm returns the appropriate XML signature algorithm based on the certificate's public key type
+func getSignatureAlgorithm(cert *x509.Certificate) (string, error) {
+	switch cert.PublicKey.(type) {
+	case *rsa.PublicKey:
+		return algSigRSA_SHA256, nil
+	case *ecdsa.PublicKey:
+		return algSigECDSA_SHA256, nil
+	default:
+		return "", fmt.Errorf("unsupported public key type: %T", cert.PublicKey)
+	}
+}
+
+// formatSignature formats the signature based on the signer type
+// ECDSA signatures need to be in IEEE P1363 format (concatenated R||S)
+func formatSignature(sigRaw []byte, signer crypto.Signer) ([]byte, error) {
+	switch signer.Public().(type) {
+	case *ecdsa.PublicKey:
+		// Parse ASN.1 DER encoded signature
+		var sig ecdsaSignature
+		if _, err := asn1.Unmarshal(sigRaw, &sig); err != nil {
+			return nil, fmt.Errorf("failed to parse ECDSA signature: %w", err)
+		}
+
+		// Get the key size to determine the component length
+		ecdsaKey := signer.Public().(*ecdsa.PublicKey)
+		keySize := (ecdsaKey.Params().BitSize + 7) / 8
+
+		// Convert R and S to fixed-length byte arrays
+		rBytes := sig.R.Bytes()
+		sBytes := sig.S.Bytes()
+
+		// Pad with leading zeros if necessary
+		rPadded := make([]byte, keySize)
+		sPadded := make([]byte, keySize)
+		copy(rPadded[keySize-len(rBytes):], rBytes)
+		copy(sPadded[keySize-len(sBytes):], sBytes)
+
+		// Concatenate R||S
+		return append(rPadded, sPadded...), nil
+	case *rsa.PublicKey:
+		// RSA signatures are already in the correct format
+		return sigRaw, nil
+	default:
+		return nil, fmt.Errorf("unsupported signer type: %T", signer.Public())
+	}
 }
 
 func Sign(authRequest AuthTokenRequest, cert *x509.Certificate, signer crypto.Signer) ([]byte, error) {
@@ -129,13 +187,19 @@ func Sign(authRequest AuthTokenRequest, cert *x509.Certificate, signer crypto.Si
 	sig.CreateAttr("xmlns:ds", nsDS)
 	sig.CreateAttr("xmlns:xades", nsXAdES)
 
+	// Determine the signature algorithm based on the certificate type
+	sigAlgorithm, err := getSignatureAlgorithm(cert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine signature algorithm: %w", err)
+	}
+
 	si := etree.NewElement("ds:SignedInfo")
 	si.CreateAttr("xmlns:ds", nsDS)
 	si.CreateAttr("xmlns:xades", nsXAdES)
 	cm := etree.NewElement("ds:CanonicalizationMethod")
 	cm.CreateAttr("Algorithm", algC14NExclusive)
 	sim := etree.NewElement("ds:SignatureMethod")
-	sim.CreateAttr("Algorithm", algSigRSA_SHA256)
+	sim.CreateAttr("Algorithm", sigAlgorithm)
 
 	refData := buildReference("", algDigestSHA256, []string{transformEnveloped, algC14NExclusive}, "")
 	refProps := buildReference("#"+xadesPropsID, algDigestSHA256, []string{algC14NExclusive}, "")
@@ -191,12 +255,17 @@ func Sign(authRequest AuthTokenRequest, cert *x509.Certificate, signer crypto.Si
 	}
 	h := sha256.Sum256(canonSI)
 	sigRaw, err := signer.Sign(rand.Reader, h[:], crypto.SHA256)
-	// sigRaw, err := rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA256, h[:])
-	// if err != nil {
-	// 	return nil, err
-	// }
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign: %w", err)
+	}
 
-	sig.FindElement("./ds:SignatureValue").SetText(base64.StdEncoding.EncodeToString(sigRaw))
+	// Format the signature appropriately for the algorithm
+	formattedSig, err := formatSignature(sigRaw, signer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to format signature: %w", err)
+	}
+
+	sig.FindElement("./ds:SignatureValue").SetText(base64.StdEncoding.EncodeToString(formattedSig))
 
 	out := etree.NewDocument()
 	out.SetRoot(root)

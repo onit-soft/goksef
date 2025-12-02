@@ -3,19 +3,24 @@ package goksef
 import (
 	"bytes"
 	"crypto"
+	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/onit-soft/goksef/goksef/xades"
 )
 
 type Client interface {
+	WithAuthMethod(authMethod KSEFAuthMethod) Client
 	WithKeyPair(cert *x509.Certificate, signer crypto.Signer) Client
+	WithKSEFToken(ksefToken string) Client
 	WithOrganizationName(organizationName string) Client
 	WithVatID(vatID string) Client
 	WithCommonName(commonName string) Client
@@ -45,18 +50,21 @@ type client struct {
 	organizationName string
 	commonName       string
 	countryCode      string
+	authMethod       KSEFAuthMethod
 
 	accessToken string
 	validUntil  *time.Time
 
-	cert   *x509.Certificate
-	signer crypto.Signer
+	cert      *x509.Certificate
+	signer    crypto.Signer
+	ksefToken string
 }
 
 func NewClient(baseURL string) Client {
 	return &client{
-		client:  http.Client{},
-		baseURL: baseURL,
+		client:     http.Client{},
+		baseURL:    baseURL,
+		authMethod: KSEFAuthMethodCertificate,
 	}
 }
 
@@ -118,6 +126,16 @@ func (c *client) UseSelfSigned() error {
 	return nil
 }
 
+func (c *client) WithAuthMethod(authMethod KSEFAuthMethod) Client {
+	c.authMethod = authMethod
+	return c
+}
+
+func (c *client) WithKSEFToken(ksefToken string) Client {
+	c.ksefToken = ksefToken
+	return c
+}
+
 func (k *client) GetInvoicesMetadata(filter Filter) (*InvoiceListResponse, error) {
 	var invoiceListResponse InvoiceListResponse
 	data, err := json.Marshal(filter)
@@ -176,6 +194,32 @@ func (k *client) GetSymetricKey() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("symetric key not found")
+}
+
+func (k *client) GetKsefTokenEncryption() (*rsa.PublicKey, error) {
+	publicKeyCertificates, err := k.GetPublicKeyCertificate()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range publicKeyCertificates {
+		for _, usage := range key.Usage {
+			if usage == "KsefTokenEncryption" {
+				pemKey, err := base64PublicKeyToPEM(key.Certificate)
+				if err != nil {
+					return nil, err
+				}
+
+				pubKey, err := parsePublicKeyFromCertificatePEM(pemKey)
+				if err != nil {
+					return nil, err
+				}
+
+				return pubKey, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("ksef token encryption key not found")
 }
 
 func (k *client) OpenOnlineSession(req OpenOnlineSessionRequest) (onlineSession OpenOnlineSessionResponse, err error) {
@@ -367,23 +411,63 @@ func (k *client) refreshAuthToken() error {
 		return err
 	}
 
-	authToken, err := xades.NewAuthTokenRequestBuilder().
-		WithChallenge(authChallange.Challange).
-		WithContextNip(k.vatID).
-		WithSubjectType(xades.CertificateSubject).
-		Build()
-	if err != nil {
-		return err
-	}
+	var authTokenResponse AuthTokenResponse
 
-	signedAuthToken, err := xades.Sign(*authToken, k.cert, k.signer)
-	if err != nil {
-		return err
-	}
+	switch k.authMethod {
+	case KSEFAuthMethodCertificate:
+		authToken, err := xades.NewAuthTokenRequestBuilder().
+			WithChallenge(authChallange.Challange).
+			WithContextNip(k.vatID).
+			WithSubjectType(xades.CertificateSubject).
+			Build()
+		if err != nil {
+			return err
+		}
 
-	authTokenResponse, err := k.getAuthToken(signedAuthToken)
-	if err != nil {
-		return err
+		signedAuthToken, err := xades.Sign(*authToken, k.cert, k.signer)
+		if err != nil {
+			return err
+		}
+
+		authTokenResponse, err = k.getAuthTokenWithXAdES(signedAuthToken)
+		if err != nil {
+			return err
+		}
+	case KSEFAuthMethodToken:
+		pubKey, err := k.GetKsefTokenEncryption()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("timestamp: ", authChallange.Timestamp)
+
+		t, err := time.Parse(time.RFC3339Nano, authChallange.Timestamp)
+		if err != nil {
+			return err
+		}
+
+		tokenTimestamp := k.ksefToken + "|" + strconv.Itoa(int(t.UnixMilli()))
+
+		encryptedToken, err := encryptWithRSAUsingPublicKey([]byte(tokenTimestamp), pubKey)
+		if err != nil {
+			return err
+		}
+
+		req := AuthKSEFTokenRequest{
+			Challange: authChallange.Challange,
+			ContextIdentifier: ContextIdentifier{
+				Type:  "Nip",
+				Value: k.vatID,
+			},
+			EncryptedToken: base64.StdEncoding.EncodeToString(encryptedToken),
+		}
+
+		authTokenResponse, err = k.getAuthTokenWithKSEFToken(req)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("error invalid auth method")
 	}
 
 	accessTokenResponse, err := k.getAccessToken(authTokenResponse.AuthToken.Token)
@@ -401,13 +485,42 @@ func (k *client) refreshAuthToken() error {
 	return nil
 }
 
-func (k *client) getAuthToken(signedAuthToken []byte) (AuthTokenResponse, error) {
+func (k *client) getAuthTokenWithXAdES(signedAuthToken []byte) (AuthTokenResponse, error) {
 	var authTokenResponse AuthTokenResponse
 
 	data, statusCode, err := k.post(request{
 		path:        APIv2AuthXadesSignaturePath,
 		contentType: ContentTypeXML,
 		body:        signedAuthToken,
+	})
+	if err != nil {
+		return authTokenResponse, err
+	}
+
+	if statusCode != http.StatusOK && statusCode != http.StatusAccepted {
+		return authTokenResponse, fmt.Errorf("error getting auth token, status code %d, body: %s", statusCode, data)
+	}
+
+	err = json.Unmarshal(data, &authTokenResponse)
+	if err != nil {
+		return authTokenResponse, fmt.Errorf("error unmarshaling auth token: %v", err)
+	}
+
+	return authTokenResponse, nil
+}
+
+func (k *client) getAuthTokenWithKSEFToken(req AuthKSEFTokenRequest) (AuthTokenResponse, error) {
+	var authTokenResponse AuthTokenResponse
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return authTokenResponse, err
+	}
+
+	data, statusCode, err := k.post(request{
+		path:        APIv2AuthKSEFTokenPath,
+		contentType: ContentTypeJSON,
+		body:        body,
 	})
 	if err != nil {
 		return authTokenResponse, err
