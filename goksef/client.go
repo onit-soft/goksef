@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/onit-soft/goksef/goksef/xades"
@@ -311,6 +312,7 @@ func (k *client) ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse
 				return nil, nil, err
 			}
 
+			faktura.NumerKsef, _ = strings.CutSuffix(f.FileInfo().Name(), ".xml")
 			result = append(result, faktura)
 		}
 	}
