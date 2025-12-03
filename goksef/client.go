@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -37,7 +38,7 @@ type Client interface {
 	GetInvoiceExportStatus(referenceNumber string) (*InvoiceExportStatusResponse, error)
 	CreateInvoiceExport(request InvoiceExportRequest) (*InvoiceExportResponse, error)
 	GetInvoiceExportPart(url string) ([]byte, error)
-	ExportInvoices(filter Filter) (map[string][]byte, error)
+	ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse, error)
 }
 
 type request struct {
@@ -224,15 +225,15 @@ func (k *client) CreateInvoiceExport(request InvoiceExportRequest) (*InvoiceExpo
 	return &invoiceExportResponse, nil
 }
 
-func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
+func (k *client) ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse, error) {
 	symetricKey, err := k.GetSymetricKey()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	encryptionData, err := GetEncryptionData(symetricKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	exportResponse, err := k.CreateInvoiceExport(InvoiceExportRequest{
@@ -243,7 +244,7 @@ func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var exportStatusResponse *InvoiceExportStatusResponse
@@ -253,7 +254,7 @@ func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
 	for range ticker.C {
 		exportStatusResponse, err = k.GetInvoiceExportStatus(exportResponse.ReferenceNumber)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if exportStatusResponse.Status.Code == http.StatusOK {
@@ -261,41 +262,59 @@ func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
 		}
 	}
 
-	result := make(map[string][]byte)
+	metadataList := make([]InvoiceListResponse, 0)
+	result := make([]Faktura, 0)
 
 	for _, part := range exportStatusResponse.Package.Parts {
 		encryptedData, err := k.GetInvoiceExportPart(part.Url)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		decryptedData, err := DecryptBytesWithAES256(encryptedData, encryptionData.CipherKey, encryptionData.CipherIV)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		reader := bytes.NewReader(decryptedData)
 
 		zipReader, err := zip.NewReader(reader, int64(len(decryptedData)))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		for _, f := range zipReader.File {
 			r, err := f.Open()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			body, err := io.ReadAll(r)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
-			result[f.FileInfo().Name()] = body
+			if f.FileInfo().Name() == "_metadata.json" {
+				metadata := InvoiceListResponse{}
+				err = json.Unmarshal(body, &metadata)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				metadataList = append(metadataList, metadata)
+				continue
+			}
+
+			faktura := Faktura{}
+			err = xml.Unmarshal(body, &faktura)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			result = append(result, faktura)
 		}
 	}
-	return result, nil
+	return result, metadataList, nil
 }
 
 func (k *client) GetPublicKeyCertificate() (publicKeyCertificates []PublicKeyCertificate, err error) {
