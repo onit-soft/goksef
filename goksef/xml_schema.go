@@ -5,15 +5,16 @@ import "encoding/xml"
 const nsFaktura = "http://crd.gov.pl/wzor/2023/06/29/12648/"
 
 type Faktura struct {
-	XMLName  xml.Name `xml:"Faktura"`
-	XMLNS    string   `xml:"xmlns,attr,omitempty"`
-	XMLNSetd string   `xml:"xmlns:etd,attr,omitempty"`
-	XMLNSxsi string   `xml:"xmlns:xsi,attr,omitempty"`
-	Naglowek Naglowek `xml:"Naglowek"`
-	Podmiot1 Podmiot  `xml:"Podmiot1"`
-	Podmiot2 Podmiot  `xml:"Podmiot2"`
-	Podmiot3 *Podmiot `xml:"Podmiot3,omitempty"`
-	Fa       Fa       `xml:"Fa"`
+	XMLName   xml.Name `xml:"Faktura"`
+	XMLNS     string   `xml:"xmlns,attr,omitempty"`
+	XMLNSetd  string   `xml:"xmlns:etd,attr,omitempty"`
+	XMLNSxsi  string   `xml:"xmlns:xsi,attr,omitempty"`
+	Naglowek  Naglowek `xml:"Naglowek"`
+	Podmiot1  Podmiot  `xml:"Podmiot1"`
+	Podmiot2  Podmiot  `xml:"Podmiot2"`
+	Podmiot3  *Podmiot `xml:"Podmiot3,omitempty"`
+	Fa        Fa       `xml:"Fa"`
+	NumerKsef string   `xml:"-"`
 }
 
 type Naglowek struct {
