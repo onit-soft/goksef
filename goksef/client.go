@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/onit-soft/goksef/goksef/xades"
@@ -283,8 +282,6 @@ func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
 		}
 
 		for _, f := range zipReader.File {
-			fileName := f.FileInfo().Name()
-
 			r, err := f.Open()
 			if err != nil {
 				return nil, err
@@ -295,8 +292,7 @@ func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
 				return nil, err
 			}
 
-			ksefNumber, _ := strings.CutSuffix(fileName, ".xml")
-			result[ksefNumber] = body
+			result[f.FileInfo().Name()] = body
 		}
 	}
 	return result, nil
