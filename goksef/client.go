@@ -1,6 +1,7 @@
 package goksef
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto"
 	"crypto/rsa"
@@ -12,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/onit-soft/goksef/goksef/xades"
@@ -33,6 +35,10 @@ type Client interface {
 	CloseOnlineSession(referenceNumber string) error
 	SendInvoices(send SendInvoices) (string, error)
 	GetSymetricKey() (string, error)
+	GetInvoiceExportStatus(referenceNumber string) (*InvoiceExportStatusResponse, error)
+	CreateInvoiceExport(request InvoiceExportRequest) (*InvoiceExportResponse, error)
+	GetInvoiceExportPart(url string) ([]byte, error)
+	ExportInvoices(filter Filter) (map[string][]byte, error)
 }
 
 type request struct {
@@ -158,6 +164,142 @@ func (k *client) GetInvoicesMetadata(filter Filter) (*InvoiceListResponse, error
 	}
 
 	return &invoiceListResponse, nil
+}
+
+func (k *client) GetInvoiceExportStatus(referenceNumber string) (*InvoiceExportStatusResponse, error) {
+	var invoiceExportStatusResponse InvoiceExportStatusResponse
+
+	response, statusCode, err := k.getWithAuth(
+		fmt.Sprintf(APIv2InvoiceExportStatusPath, referenceNumber),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("error getting invoice export status, status code %d, response: %s", statusCode, response)
+	}
+
+	err = json.Unmarshal(response, &invoiceExportStatusResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invoiceExportStatusResponse, nil
+}
+
+func (k *client) GetInvoiceExportPart(url string) ([]byte, error) {
+	data, statusCode, err := k.getWithUrl(url)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("error getting invoice export part, status code %d, response: %s", statusCode, data)
+	}
+
+	return data, nil
+}
+
+func (k *client) CreateInvoiceExport(request InvoiceExportRequest) (*InvoiceExportResponse, error) {
+	var invoiceExportResponse InvoiceExportResponse
+	data, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	response, statusCode, err := k.postWithAuth(APIv2InvoiceExportPath, ContentTypeJSON, data)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode != http.StatusOK && statusCode != http.StatusCreated {
+		return nil, fmt.Errorf("error getting invoice export, status code %d, response: %s", statusCode, response)
+	}
+
+	err = json.Unmarshal(response, &invoiceExportResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invoiceExportResponse, nil
+}
+
+func (k *client) ExportInvoices(filter Filter) (map[string][]byte, error) {
+	symetricKey, err := k.GetSymetricKey()
+	if err != nil {
+		return nil, err
+	}
+
+	encryptionData, err := GetEncryptionData(symetricKey)
+	if err != nil {
+		return nil, err
+	}
+
+	exportResponse, err := k.CreateInvoiceExport(InvoiceExportRequest{
+		Filters: filter,
+		Encryption: Encryption{
+			EncryptedSymetricKey: encryptionData.EncryptedSymmetricKey,
+			InitializationVector: encryptionData.InitializationVector,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var exportStatusResponse *InvoiceExportStatusResponse
+
+	ticker := time.NewTicker(time.Second * 5)
+
+	for range ticker.C {
+		exportStatusResponse, err = k.GetInvoiceExportStatus(exportResponse.ReferenceNumber)
+		if err != nil {
+			return nil, err
+		}
+
+		if exportStatusResponse.Status.Code == http.StatusOK {
+			break
+		}
+	}
+
+	result := make(map[string][]byte)
+
+	for _, part := range exportStatusResponse.Package.Parts {
+		encryptedData, err := k.GetInvoiceExportPart(part.Url)
+		if err != nil {
+			return nil, err
+		}
+
+		decryptedData, err := DecryptBytesWithAES256(encryptedData, encryptionData.CipherKey, encryptionData.CipherIV)
+		if err != nil {
+			return nil, err
+		}
+
+		reader := bytes.NewReader(decryptedData)
+
+		zipReader, err := zip.NewReader(reader, int64(len(decryptedData)))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, f := range zipReader.File {
+			fileName := f.FileInfo().Name()
+
+			r, err := f.Open()
+			if err != nil {
+				return nil, err
+			}
+
+			body, err := io.ReadAll(r)
+			if err != nil {
+				return nil, err
+			}
+
+			ksefNumber, _ := strings.CutSuffix(fileName, ".xml")
+			result[ksefNumber] = body
+		}
+	}
+	return result, nil
 }
 
 func (k *client) GetPublicKeyCertificate() (publicKeyCertificates []PublicKeyCertificate, err error) {
@@ -559,6 +701,25 @@ func (k *client) getAccessToken(authToken string) (AccessTokenResponse, error) {
 	}
 
 	return accessTokenResponse, nil
+}
+
+func (k *client) getWithUrl(url string) (data []byte, statusCode int, err error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return
+	}
+
+	resp, err := k.client.Do(req)
+	if err != nil {
+		return
+	}
+
+	data, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	return data, resp.StatusCode, nil
 }
 
 func (k *client) get(request request) (data []byte, statusCode int, err error) {

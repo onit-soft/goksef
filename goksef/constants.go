@@ -14,6 +14,8 @@ const (
 	APIv2AuthChallengePath         = "/api/v2/auth/challenge"
 	APIv2AuthTokenRedeemPath       = "/api/v2/auth/token/redeem"
 	APIv2AuthStatusPath            = "/api/v2/auth/%s"
+	APIv2InvoiceExportPath         = "/api/v2/invoices/exports"
+	APIv2InvoiceExportStatusPath   = "/api/v2/invoices/exports/%s"
 	APIv2InvoicesQueryMetadataPath = "/api/v2/invoices/query/metadata"
 	APIv2PublicKeyCertificatesPath = "/api/v2/security/public-key-certificates"
 	APIv2ListSessionsPath          = "/api/v2/sessions"

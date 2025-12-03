@@ -258,3 +258,43 @@ type ContextIdentifier struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
+
+type InvoiceExportRequest struct {
+	Encryption Encryption `json:"encryption"`
+	Filters    Filter     `json:"filters"`
+}
+
+type InvoiceExportResponse struct {
+	ReferenceNumber string `json:"referenceNumber"`
+}
+
+type InvoiceExportStatusResponse struct {
+	Status        InvoiceExportStatus  `json:"status"`
+	CompletedDate string               `json:"completedDate"`
+	Package       InvoiceExportPackage `json:"package"`
+}
+
+type InvoiceExportStatus struct {
+	Code        int    `json:"code"`
+	Description string `json:"description"`
+}
+
+type InvoiceExportPackage struct {
+	InvoiceCount             int                 `json:"invoiceCount"`
+	Size                     int                 `json:"size"`
+	Parts                    []InvoiceExportPart `json:"parts"`
+	IsTruncated              bool                `json:"isTruncated"`
+	LastPermanentStorageDate string              `json:"lastPermanentStorageDate"`
+}
+
+type InvoiceExportPart struct {
+	OrdinalNumber     int    `json:"ordinalNumber"`
+	PartName          string `json:"partName"`
+	Method            string `json:"method"`
+	Url               string `json:"url"`
+	PartSize          int    `json:"partSize"`
+	PartHash          string `json:"partHash"`
+	EncryptedPartSize int    `json:"encryptedPartSize"`
+	EncryptedPartHash string `json:"encryptedPartHash"`
+	ExpirationDate    string `json:"expirationDate"`
+}
