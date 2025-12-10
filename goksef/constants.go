@@ -19,6 +19,7 @@ const (
 	APIv2InvoicesQueryMetadataPath = "/api/v2/invoices/query/metadata"
 	APIv2PublicKeyCertificatesPath = "/api/v2/security/public-key-certificates"
 	APIv2ListSessionsPath          = "/api/v2/sessions"
+	APIv2GetSessionPath            = "/api/v2/sessions/%s"
 	APIv2OpenOnlineSessionPath     = "/api/v2/sessions/online"
 	APIv2SendInvoicePath           = "/api/v2/sessions/online/%s/invoices"
 	APIv2CloseOnlineSessionPath    = "/api/v2/sessions/online/%s/close"

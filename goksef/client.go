@@ -30,6 +30,7 @@ type Client interface {
 	WithCountryCode(countryCode string) Client
 	UseSelfSigned() error
 	GetInvoicesMetadata(filter Filter) (*InvoiceListResponse, error)
+	GetSessionStatus(sessionRef string) (SessionStatusResponse, error)
 	ListSessions(sessionType string) (ListSessionsResponse, error)
 	ListFailedInvoices(referenceNumber string) (InvoiceListResponse, error)
 	OpenOnlineSession(req OpenOnlineSessionRequest) (onlineSession OpenOnlineSessionResponse, err error)
@@ -500,6 +501,27 @@ func (k *client) SendInvoices(send SendInvoices) (string, error) {
 	}
 
 	return session.ReferenceNumber, nil
+}
+
+func (k *client) GetSessionStatus(sessionRef string) (SessionStatusResponse, error) {
+	response, statusCode, err := k.getWithAuth(
+		fmt.Sprintf(APIv2ListSessionsPath, sessionRef),
+	)
+	if err != nil {
+		return SessionStatusResponse{}, err
+	}
+
+	if statusCode != http.StatusOK {
+		return SessionStatusResponse{}, fmt.Errorf("error listing sessions, status code %d, response: %s", statusCode, response)
+	}
+
+	var sessionsStatus SessionStatusResponse
+	err = json.Unmarshal(response, &sessionsStatus)
+	if err != nil {
+		return SessionStatusResponse{}, err
+	}
+
+	return sessionsStatus, nil
 }
 
 func (k *client) ListSessions(sessionType string) (ListSessionsResponse, error) {

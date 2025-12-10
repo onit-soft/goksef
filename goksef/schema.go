@@ -298,3 +298,10 @@ type InvoiceExportPart struct {
 	EncryptedPartHash string `json:"encryptedPartHash"`
 	ExpirationDate    string `json:"expirationDate"`
 }
+
+type SessionStatusResponse struct {
+	Status                 SessionStatus `json:"status"`
+	InvoiceCount           int32         `json:"invoiceCount"`
+	SuccessfulInvoiceCount int32         `json:"successfulInvoiceCount"`
+	FailedInvoiceCount     int32         `json:"failedInvoiceCount"`
+}
