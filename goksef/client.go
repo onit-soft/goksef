@@ -33,6 +33,7 @@ type Client interface {
 	GetSessionStatus(sessionRef string) (SessionStatusResponse, error)
 	ListSessions(sessionType string) (ListSessionsResponse, error)
 	ListFailedInvoices(referenceNumber string) (InvoiceListResponse, error)
+	ListSessionInvoices(sessionRef string) (InvoiceListResponse, error)
 	OpenOnlineSession(req OpenOnlineSessionRequest) (onlineSession OpenOnlineSessionResponse, err error)
 	CloseOnlineSession(referenceNumber string) error
 	SendInvoices(send SendInvoices) (string, error)
@@ -522,6 +523,27 @@ func (k *client) GetSessionStatus(sessionRef string) (SessionStatusResponse, err
 	}
 
 	return sessionsStatus, nil
+}
+
+func (k *client) ListSessionInvoices(sessionRef string) (InvoiceListResponse, error) {
+	response, statusCode, err := k.getWithAuth(
+		fmt.Sprintf(APIv2ListSessionInvoicesPath, sessionRef),
+	)
+	if err != nil {
+		return InvoiceListResponse{}, err
+	}
+
+	if statusCode != http.StatusOK {
+		return InvoiceListResponse{}, fmt.Errorf("error listing sessions, status code %d, response: %s", statusCode, response)
+	}
+
+	var sessionInvoices InvoiceListResponse
+	err = json.Unmarshal(response, &sessionInvoices)
+	if err != nil {
+		return InvoiceListResponse{}, err
+	}
+
+	return sessionInvoices, nil
 }
 
 func (k *client) ListSessions(sessionType string) (ListSessionsResponse, error) {
