@@ -146,7 +146,7 @@ type FaWiersz struct {
 	P8A         string `xml:"P_8A"`
 	P8B         string `xml:"P_8B"`
 	P9A         string `xml:"P_9A"`
-	P9B         string `xml:"P_9B"`
+	P9B         string `xml:"P_9B,omitempty"`
 	P11         string `xml:"P_11"`
 	// Available vat rates:
 	// 23
