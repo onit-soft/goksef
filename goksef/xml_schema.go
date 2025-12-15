@@ -40,6 +40,7 @@ type Podmiot struct {
 	IDNabywcy           string              `xml:"IDNabywcy,omitempty"`
 	StatusInfoPodatnika string              `xml:"StatusInfoPodatnika,omitempty"`
 	JST                 string              `xml:"JST,omitempty"`
+	GV                  string              `xml:"GV,omitempty"`
 }
 
 type DaneIdentyfikacyjne struct {
