@@ -39,6 +39,7 @@ type Podmiot struct {
 	NrKlienta           string              `xml:"NrKlienta,omitempty"`
 	IDNabywcy           string              `xml:"IDNabywcy,omitempty"`
 	StatusInfoPodatnika string              `xml:"StatusInfoPodatnika,omitempty"`
+	JST                 string              `xml:"JST,omitempty"`
 }
 
 type DaneIdentyfikacyjne struct {
