@@ -443,23 +443,23 @@ func (k *client) SendInvoices(send SendInvoices) (string, error) {
 		},
 	})
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	for _, invoiceContent := range send.InvoiceContents {
 		invoiceMetadata, err := GetMetaData(invoiceContent)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 
 		encryptedInvoice, err := EncryptBytesWithAES256(invoiceContent, encryptionData.CipherKey, encryptionData.CipherIV)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 
 		encryptedInvoiceMetadata, err := GetMetaData(encryptedInvoice)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 
 		invoiceRequest := SendInvoiceRequest{
@@ -472,7 +472,7 @@ func (k *client) SendInvoices(send SendInvoices) (string, error) {
 
 		content, err := json.Marshal(invoiceRequest)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 
 		resp, statusCode, err := k.postWithAuth(
@@ -506,7 +506,7 @@ func (k *client) SendInvoices(send SendInvoices) (string, error) {
 
 func (k *client) GetSessionStatus(sessionRef string) (SessionStatusResponse, error) {
 	response, statusCode, err := k.getWithAuth(
-		fmt.Sprintf(APIv2ListSessionsPath, sessionRef),
+		fmt.Sprintf(APIv2GetSessionPath, sessionRef),
 	)
 	if err != nil {
 		return SessionStatusResponse{}, err
