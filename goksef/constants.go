@@ -13,6 +13,7 @@ const (
 	APIv2AuthKSEFTokenPath         = "/api/v2/auth/ksef-token"
 	APIv2AuthChallengePath         = "/api/v2/auth/challenge"
 	APIv2AuthTokenRedeemPath       = "/api/v2/auth/token/redeem"
+	APIv2AuthTokenRefreshPath      = "/api/v2/auth/token/refresh"
 	APIv2AuthStatusPath            = "/api/v2/auth/%s"
 	APIv2InvoiceExportPath         = "/api/v2/invoices/exports"
 	APIv2InvoiceExportStatusPath   = "/api/v2/invoices/exports/%s"

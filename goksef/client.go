@@ -28,6 +28,9 @@ type Client interface {
 	WithVatID(vatID string) Client
 	WithCommonName(commonName string) Client
 	WithCountryCode(countryCode string) Client
+	WithAccessToken(accessToken, refreshToken string, validUntil *time.Time) Client
+	GetAccessToken() (string, string, *time.Time)
+	RefreshAccessToken() error
 	UseSelfSigned() error
 	GetInvoicesMetadata(filter Filter) (*InvoiceListResponse, error)
 	GetSessionStatus(sessionRef string) (SessionStatusResponse, error)
@@ -61,8 +64,9 @@ type client struct {
 	countryCode      string
 	authMethod       KSEFAuthMethod
 
-	accessToken string
-	validUntil  *time.Time
+	refreshToken string
+	accessToken  string
+	validUntil   *time.Time
 
 	cert      *x509.Certificate
 	signer    crypto.Signer
@@ -101,6 +105,17 @@ func (c *client) WithCommonName(commonName string) Client {
 func (c *client) WithCountryCode(countryCode string) Client {
 	c.countryCode = countryCode
 	return c
+}
+
+func (c *client) WithAccessToken(accessToken, refreshToken string, validUntil *time.Time) Client {
+	c.accessToken = accessToken
+	c.refreshToken = refreshToken
+	c.validUntil = validUntil
+	return c
+}
+
+func (c *client) GetAccessToken() (string, string, *time.Time) {
+	return c.accessToken, c.refreshToken, c.validUntil
 }
 
 func (c *client) UseSelfSigned() error {
@@ -608,7 +623,7 @@ func (k *client) getAuthChallange() (authChallange AuthChallange, err error) {
 	return authChallange, nil
 }
 
-func (k *client) refreshAuthToken() error {
+func (k *client) initializeAccessToken() error {
 	authChallange, err := k.getAuthChallange()
 	if err != nil {
 		return err
@@ -685,6 +700,38 @@ func (k *client) refreshAuthToken() error {
 
 	k.accessToken = accessTokenResponse.AccessToken.Token
 	k.validUntil = &validUntil
+	k.refreshToken = accessTokenResponse.RefreshToken.Token
+	return nil
+}
+
+func (k *client) RefreshAccessToken() error {
+	var accessTokenResponse AccessTokenResponse
+
+	data, statusCode, err := k.post(request{
+		path:          APIv2AuthTokenRefreshPath,
+		authorization: "Bearer " + k.refreshToken,
+	})
+	if err != nil {
+		return fmt.Errorf("error sending request for access token: %v", err)
+	}
+
+	if statusCode != http.StatusOK {
+		return fmt.Errorf("error getting access token, status code %d, body: %s", statusCode, data)
+	}
+
+	err = json.Unmarshal(data, &accessTokenResponse)
+	if err != nil {
+		return fmt.Errorf("error unmarshaling access token: %v", err)
+	}
+
+	validUntil, err := time.Parse(time.RFC3339, accessTokenResponse.AccessToken.ValidUntil)
+	if err != nil {
+		return fmt.Errorf("error parsing time: %v", err)
+	}
+
+	k.validUntil = &validUntil
+	k.accessToken = accessTokenResponse.AccessToken.Token
+
 	return nil
 }
 
@@ -834,10 +881,15 @@ func (k *client) post(request request) (data []byte, statusCode int, err error) 
 }
 
 func (k *client) getWithAuth(path string) (data []byte, statusCode int, err error) {
-	if k.validUntil == nil || time.Now().After(*k.validUntil) {
-		err = k.refreshAuthToken()
-		if err != nil {
-			return nil, 0, fmt.Errorf("error refreshing auth token: %v", err)
+	if k.validUntil != nil && time.Now().Add(time.Minute*5).After(*k.validUntil) {
+		if errRefresh := k.RefreshAccessToken(); errRefresh != nil {
+			if errInit := k.initializeAccessToken(); errInit != nil {
+				return nil, 0, fmt.Errorf("error refreshing auth token: %v; error initializing auth token: %v", errRefresh, errInit)
+			}
+		}
+	} else if k.validUntil == nil {
+		if err = k.initializeAccessToken(); err != nil {
+			return nil, 0, fmt.Errorf("error initializing auth token: %v", err)
 		}
 	}
 
@@ -848,10 +900,15 @@ func (k *client) getWithAuth(path string) (data []byte, statusCode int, err erro
 }
 
 func (k *client) postWithAuth(path, contentType string, body []byte) (data []byte, statusCode int, err error) {
-	if k.validUntil == nil || time.Now().After(*k.validUntil) {
-		err = k.refreshAuthToken()
-		if err != nil {
-			return nil, 0, fmt.Errorf("error refreshing auth token: %v", err)
+	if k.validUntil != nil && time.Now().Add(time.Minute*5).After(*k.validUntil) {
+		if errRefresh := k.RefreshAccessToken(); errRefresh != nil {
+			if errInit := k.initializeAccessToken(); errInit != nil {
+				return nil, 0, fmt.Errorf("error refreshing auth token: %v; error initializing auth token: %v", errRefresh, errInit)
+			}
+		}
+	} else if k.validUntil == nil {
+		if err = k.initializeAccessToken(); err != nil {
+			return nil, 0, fmt.Errorf("error initializing auth token: %v", err)
 		}
 	}
 

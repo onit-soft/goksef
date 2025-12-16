@@ -24,7 +24,8 @@ type AuthToken struct {
 }
 
 type AccessTokenResponse struct {
-	AccessToken AccessToken `json:"accessToken"`
+	AccessToken  AccessToken `json:"accessToken"`
+	RefreshToken AccessToken `json:"refreshToken"`
 }
 
 type AccessToken struct {
