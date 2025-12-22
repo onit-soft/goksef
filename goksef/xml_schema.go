@@ -15,6 +15,7 @@ type Faktura struct {
 	Podmiot3  *Podmiot `xml:"Podmiot3,omitempty"`
 	Fa        Fa       `xml:"Fa"`
 	NumerKsef string   `xml:"-"`
+	Stopka    Stopka   `xml:"Stopka"`
 }
 
 type Naglowek struct {
@@ -183,4 +184,12 @@ type RachunekBankowy struct {
 	NrRB         string `xml:"NrRB"`
 	NazwaBanku   string `xml:"NazwaBanku"`
 	OpisRachunku string `xml:"OpisRachunku"`
+}
+
+type Stopka struct {
+	Informacje []Informacje `xml:"Informacje,omitempty"`
+}
+
+type Informacje struct {
+	StopkaFaktury string `xml:"StopkaFaktury,omitempty"`
 }
