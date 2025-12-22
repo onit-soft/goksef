@@ -103,9 +103,15 @@ type Fa struct {
 	// ROZ - Faktura rozliczeniowa
 	// KOR_ZAL - Faktura korygująca fakturę zaliczkową
 	// KOR_ROZ - Faktura korygująca fakturę rozliczeniową
-	RodzajFaktury string     `xml:"RodzajFaktury"`
-	FaWiersz      []FaWiersz `xml:"FaWiersz"`
-	Platnosc      *Platnosc  `xml:"Platnosc,omitempty"`
+	RodzajFaktury string          `xml:"RodzajFaktury"`
+	FaWiersz      []FaWiersz      `xml:"FaWiersz"`
+	Platnosc      *Platnosc       `xml:"Platnosc,omitempty"`
+	DodatkowyOpis []DodatkowyOpis `xml:"DodatkowyOpis,omitempty"`
+}
+
+type DodatkowyOpis struct {
+	Klucz   string `xml:"Klucz,omitempty"`
+	Wartosc string `xml:"Wartosc,omitempty"`
 }
 
 type OkresFA struct {
