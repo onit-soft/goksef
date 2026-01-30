@@ -111,8 +111,9 @@ type Fa struct {
 }
 
 type DodatkowyOpis struct {
-	Klucz   string `xml:"Klucz,omitempty"`
-	Wartosc string `xml:"Wartosc,omitempty"`
+	Klucz     string `xml:"Klucz,omitempty"`
+	Wartosc   string `xml:"Wartosc,omitempty"`
+	NrWiersza string `xml:"NrWiersza,omitempty"`
 }
 
 type OkresFA struct {
