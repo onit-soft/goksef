@@ -75,7 +75,7 @@ type client struct {
 
 func NewClient(baseURL string) Client {
 	return &client{
-		client:     http.Client{},
+		client:     http.Client{Timeout: 30 * time.Second},
 		baseURL:    baseURL,
 		authMethod: KSEFAuthMethodCertificate,
 	}
@@ -268,8 +268,17 @@ func (k *client) ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse
 	var exportStatusResponse *InvoiceExportStatusResponse
 
 	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+	const maxPollAttempts = 60 // 5 minutes max (60 * 5s)
+	attempts := 0
 
 	for range ticker.C {
+		attempts++
+		if attempts > maxPollAttempts {
+			return nil, nil, fmt.Errorf("export polling timed out after %d attempts", maxPollAttempts)
+		}
+
 		exportStatusResponse, err = k.GetInvoiceExportStatus(exportResponse.ReferenceNumber)
 		if err != nil {
 			return nil, nil, err
