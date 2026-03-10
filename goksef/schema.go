@@ -1,6 +1,10 @@
 package goksef
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 type AuthChallange struct {
 	Challange string `json:"challenge"`
@@ -305,4 +309,27 @@ type SessionStatusResponse struct {
 	InvoiceCount           int32         `json:"invoiceCount"`
 	SuccessfulInvoiceCount int32         `json:"successfulInvoiceCount"`
 	FailedInvoiceCount     int32         `json:"failedInvoiceCount"`
+}
+
+// FakturaWithMetadata combines a parsed invoice XML with its KSeF metadata.
+type FakturaWithMetadata struct {
+	Faktura              Faktura
+	AcquisitionDate      time.Time // data wpływu do KSeF
+	InvoicingDate        time.Time // data przyjęcia do KSeF
+	PermanentStorageDate time.Time
+	InvoiceHash          string  // SHA256 hash for QR verification
+	KsefNumber           string  // KSeF number from metadata
+	IssueDate            string  // YYYY-MM-DD
+	NetAmount            float64
+	GrossAmount          float64
+	VATAmount            float64
+}
+
+// ParseKsefNumberDate parses date from KSeF number format: {NIP}-{YYYYMMDD}-{...}
+func ParseKsefNumberDate(ksefNumber string) (time.Time, error) {
+	parts := strings.Split(ksefNumber, "-")
+	if len(parts) < 2 {
+		return time.Time{}, fmt.Errorf("invalid KSeF number format: %s", ksefNumber)
+	}
+	return time.Parse("20060102", parts[1])
 }

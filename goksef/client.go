@@ -45,6 +45,7 @@ type Client interface {
 	CreateInvoiceExport(request InvoiceExportRequest) (*InvoiceExportResponse, error)
 	GetInvoiceExportPart(url string) ([]byte, error)
 	ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse, error)
+	ExportInvoicesWithMetadata(filter Filter) ([]FakturaWithMetadata, error)
 }
 
 type request struct {
@@ -343,6 +344,46 @@ func (k *client) ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse
 		}
 	}
 	return result, metadataList, nil
+}
+
+func (k *client) ExportInvoicesWithMetadata(filter Filter) ([]FakturaWithMetadata, error) {
+	faktury, metadataList, err := k.ExportInvoices(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build lookup map: ksefNumber -> Invoice metadata
+	metadataMap := make(map[string]Invoice)
+	for _, ml := range metadataList {
+		for _, inv := range ml.Invoices {
+			if inv.KsefNumber != "" {
+				metadataMap[inv.KsefNumber] = inv
+			}
+		}
+	}
+
+	result := make([]FakturaWithMetadata, 0, len(faktury))
+	for _, f := range faktury {
+		fwm := FakturaWithMetadata{
+			Faktura:    f,
+			KsefNumber: f.NumerKsef,
+		}
+
+		if meta, ok := metadataMap[f.NumerKsef]; ok {
+			fwm.AcquisitionDate = meta.AcquisitionDate
+			fwm.InvoicingDate = meta.InvoicingDate
+			fwm.PermanentStorageDate = meta.PermanentStorageDate
+			fwm.InvoiceHash = meta.InvoiceHash
+			fwm.IssueDate = meta.IssueDate
+			fwm.NetAmount = meta.NetAmount
+			fwm.GrossAmount = meta.GrossAmount
+			fwm.VATAmount = meta.VATAmount
+		}
+
+		result = append(result, fwm)
+	}
+
+	return result, nil
 }
 
 func (k *client) GetPublicKeyCertificate() (publicKeyCertificates []PublicKeyCertificate, err error) {
