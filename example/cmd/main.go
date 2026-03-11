@@ -132,11 +132,11 @@ func main() {
 				// 6 - Przelew
 				// 7 - Mobilna
 				FormaPlatnosci: "6",
-				RachunekBankowy: &goksef.RachunekBankowy{
+				RachunekBankowy: []goksef.RachunekBankowy{{
 					NrRB:         "73111111111111111111111111",
 					NazwaBanku:   "Bank Bankowości Bankowej S. A.",
 					OpisRachunku: "PLN",
-				},
+				}},
 			},
 		},
 	}

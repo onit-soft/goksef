@@ -168,13 +168,15 @@ type FaWiersz struct {
 	// zw - zwolnione od podatku
 	// oo - odwrotne obciążenie
 	// np - nie podlega
-	P12 string `xml:"P_12"`
+	P12   string `xml:"P_12"`
+	PKWiU string `xml:"PKWiU,omitempty"`
+	GTU   string `xml:"GTU,omitempty"`
 }
 
 type Platnosc struct {
 	TerminPlatnosci *TerminPlatnosci `xml:"TerminPlatnosci,omitempty"`
 	FormaPlatnosci  string           `xml:"FormaPlatnosci"`
-	RachunekBankowy *RachunekBankowy `xml:"RachunekBankowy,omitempty"`
+	RachunekBankowy []RachunekBankowy `xml:"RachunekBankowy,omitempty"`
 }
 
 type TerminPlatnosci struct {
