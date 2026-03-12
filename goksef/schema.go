@@ -28,12 +28,14 @@ type AuthToken struct {
 }
 
 type AuthStatusResponse struct {
-	ProcessingCode         string `json:"processingCode"`
-	ProcessingDescription  string `json:"processingDescription"`
-	ReferenceNumber        string `json:"referenceNumber"`
-	ElementReferenceNumber string `json:"elementReferenceNumber"`
-	AuthorisationToken     string `json:"authorisationToken"`
-	Timestamp              string `json:"timestamp"`
+	StartDate            string               `json:"startDate"`
+	AuthenticationMethod string               `json:"authenticationMethod"`
+	Status               AuthProcessingStatus `json:"status"`
+}
+
+type AuthProcessingStatus struct {
+	Code        int    `json:"code"`
+	Description string `json:"description"`
 }
 
 type AccessTokenResponse struct {

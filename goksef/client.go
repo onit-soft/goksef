@@ -882,12 +882,12 @@ func (k *client) waitForAuthReady(referenceNumber, authToken string) error {
 			return fmt.Errorf("error polling auth status: %v", err)
 		}
 
-		if status.ProcessingCode == "200" {
+		if status.Status.Code == http.StatusOK {
 			return nil
 		}
 
-		if status.ProcessingCode != "100" {
-			return fmt.Errorf("unexpected auth processing status: %s - %s (raw: %s)", status.ProcessingCode, status.ProcessingDescription, rawBody)
+		if status.Status.Code != 100 {
+			return fmt.Errorf("unexpected auth processing status: %d - %s (raw: %s)", status.Status.Code, status.Status.Description, rawBody)
 		}
 
 		<-ticker.C
