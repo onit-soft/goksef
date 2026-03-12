@@ -844,7 +844,7 @@ func (k *client) getAuthTokenWithKSEFToken(req AuthKSEFTokenRequest) (AuthTokenR
 	return authTokenResponse, statusCode, nil
 }
 
-func (k *client) getAuthStatus(referenceNumber, authToken string) (*AuthStatusResponse, error) {
+func (k *client) getAuthStatus(referenceNumber, authToken string) (*AuthStatusResponse, string, error) {
 	var authStatusResponse AuthStatusResponse
 
 	data, statusCode, err := k.get(request{
@@ -852,19 +852,19 @@ func (k *client) getAuthStatus(referenceNumber, authToken string) (*AuthStatusRe
 		authorization: "Bearer " + authToken,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error getting auth status: %v", err)
+		return nil, "", fmt.Errorf("error getting auth status: %v", err)
 	}
 
 	if statusCode != http.StatusOK {
-		return nil, fmt.Errorf("error getting auth status, status code %d, body: %s", statusCode, data)
+		return nil, string(data), fmt.Errorf("error getting auth status, status code %d, body: %s", statusCode, data)
 	}
 
 	err = json.Unmarshal(data, &authStatusResponse)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling auth status: %v", err)
+		return nil, string(data), fmt.Errorf("error unmarshaling auth status: %v, body: %s", err, data)
 	}
 
-	return &authStatusResponse, nil
+	return &authStatusResponse, string(data), nil
 }
 
 func (k *client) waitForAuthReady(referenceNumber, authToken string) error {
@@ -877,17 +877,17 @@ func (k *client) waitForAuthReady(referenceNumber, authToken string) error {
 	defer ticker.Stop()
 
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		status, err := k.getAuthStatus(referenceNumber, authToken)
+		status, rawBody, err := k.getAuthStatus(referenceNumber, authToken)
 		if err != nil {
 			return fmt.Errorf("error polling auth status: %v", err)
 		}
 
-		if status.ProcessingCode == http.StatusOK {
+		if status.ProcessingCode == "200" {
 			return nil
 		}
 
-		if status.ProcessingCode != 100 {
-			return fmt.Errorf("unexpected auth processing status: %d - %s", status.ProcessingCode, status.ProcessingDescription)
+		if status.ProcessingCode != "100" {
+			return fmt.Errorf("unexpected auth processing status: %s - %s (raw: %s)", status.ProcessingCode, status.ProcessingDescription, rawBody)
 		}
 
 		<-ticker.C
