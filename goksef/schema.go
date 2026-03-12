@@ -27,6 +27,13 @@ type AuthToken struct {
 	ValidUntil string `json:"validUntil"`
 }
 
+type AuthStatusResponse struct {
+	ProcessingCode        int    `json:"processingCode"`
+	ProcessingDescription string `json:"processingDescription"`
+	ReferenceNumber       string `json:"referenceNumber"`
+	Timestamp             string `json:"timestamp"`
+}
+
 type AccessTokenResponse struct {
 	AccessToken  AccessToken `json:"accessToken"`
 	RefreshToken AccessToken `json:"refreshToken"`

@@ -680,6 +680,7 @@ func (k *client) initializeAccessToken() error {
 	}
 
 	var authTokenResponse AuthTokenResponse
+	var httpStatusCode int
 
 	switch k.authMethod {
 	case KSEFAuthMethodCertificate:
@@ -697,7 +698,7 @@ func (k *client) initializeAccessToken() error {
 			return err
 		}
 
-		authTokenResponse, err = k.getAuthTokenWithXAdES(signedAuthToken)
+		authTokenResponse, httpStatusCode, err = k.getAuthTokenWithXAdES(signedAuthToken)
 		if err != nil {
 			return err
 		}
@@ -706,8 +707,6 @@ func (k *client) initializeAccessToken() error {
 		if err != nil {
 			return err
 		}
-
-		fmt.Println("timestamp: ", authChallange.Timestamp)
 
 		t, err := time.Parse(time.RFC3339Nano, authChallange.Timestamp)
 		if err != nil {
@@ -730,12 +729,19 @@ func (k *client) initializeAccessToken() error {
 			EncryptedToken: base64.StdEncoding.EncodeToString(encryptedToken),
 		}
 
-		authTokenResponse, err = k.getAuthTokenWithKSEFToken(req)
+		authTokenResponse, httpStatusCode, err = k.getAuthTokenWithKSEFToken(req)
 		if err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("error invalid auth method")
+	}
+
+	// If KSeF returned 202 Accepted, the auth is async — poll until ready
+	if httpStatusCode == http.StatusAccepted {
+		if err := k.waitForAuthReady(authTokenResponse.ReferenceNumber, authTokenResponse.AuthToken.Token); err != nil {
+			return fmt.Errorf("error waiting for auth to be ready: %v", err)
+		}
 	}
 
 	accessTokenResponse, err := k.getAccessToken(authTokenResponse.AuthToken.Token)
@@ -785,7 +791,7 @@ func (k *client) RefreshAccessToken() error {
 	return nil
 }
 
-func (k *client) getAuthTokenWithXAdES(signedAuthToken []byte) (AuthTokenResponse, error) {
+func (k *client) getAuthTokenWithXAdES(signedAuthToken []byte) (AuthTokenResponse, int, error) {
 	var authTokenResponse AuthTokenResponse
 
 	data, statusCode, err := k.post(request{
@@ -794,27 +800,27 @@ func (k *client) getAuthTokenWithXAdES(signedAuthToken []byte) (AuthTokenRespons
 		body:        signedAuthToken,
 	})
 	if err != nil {
-		return authTokenResponse, err
+		return authTokenResponse, 0, err
 	}
 
 	if statusCode != http.StatusOK && statusCode != http.StatusAccepted {
-		return authTokenResponse, fmt.Errorf("error getting auth token, status code %d, body: %s", statusCode, data)
+		return authTokenResponse, statusCode, fmt.Errorf("error getting auth token, status code %d, body: %s", statusCode, data)
 	}
 
 	err = json.Unmarshal(data, &authTokenResponse)
 	if err != nil {
-		return authTokenResponse, fmt.Errorf("error unmarshaling auth token: %v", err)
+		return authTokenResponse, statusCode, fmt.Errorf("error unmarshaling auth token: %v", err)
 	}
 
-	return authTokenResponse, nil
+	return authTokenResponse, statusCode, nil
 }
 
-func (k *client) getAuthTokenWithKSEFToken(req AuthKSEFTokenRequest) (AuthTokenResponse, error) {
+func (k *client) getAuthTokenWithKSEFToken(req AuthKSEFTokenRequest) (AuthTokenResponse, int, error) {
 	var authTokenResponse AuthTokenResponse
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return authTokenResponse, err
+		return authTokenResponse, 0, err
 	}
 
 	data, statusCode, err := k.post(request{
@@ -823,19 +829,71 @@ func (k *client) getAuthTokenWithKSEFToken(req AuthKSEFTokenRequest) (AuthTokenR
 		body:        body,
 	})
 	if err != nil {
-		return authTokenResponse, err
+		return authTokenResponse, 0, err
 	}
 
 	if statusCode != http.StatusOK && statusCode != http.StatusAccepted {
-		return authTokenResponse, fmt.Errorf("error getting auth token, status code %d, body: %s", statusCode, data)
+		return authTokenResponse, statusCode, fmt.Errorf("error getting auth token, status code %d, body: %s", statusCode, data)
 	}
 
 	err = json.Unmarshal(data, &authTokenResponse)
 	if err != nil {
-		return authTokenResponse, fmt.Errorf("error unmarshaling auth token: %v", err)
+		return authTokenResponse, statusCode, fmt.Errorf("error unmarshaling auth token: %v", err)
 	}
 
-	return authTokenResponse, nil
+	return authTokenResponse, statusCode, nil
+}
+
+func (k *client) getAuthStatus(referenceNumber, authToken string) (*AuthStatusResponse, error) {
+	var authStatusResponse AuthStatusResponse
+
+	data, statusCode, err := k.get(request{
+		path:          fmt.Sprintf(APIv2AuthStatusPath, referenceNumber),
+		authorization: "Bearer " + authToken,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error getting auth status: %v", err)
+	}
+
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("error getting auth status, status code %d, body: %s", statusCode, data)
+	}
+
+	err = json.Unmarshal(data, &authStatusResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling auth status: %v", err)
+	}
+
+	return &authStatusResponse, nil
+}
+
+func (k *client) waitForAuthReady(referenceNumber, authToken string) error {
+	const (
+		pollInterval = 2 * time.Second
+		maxAttempts  = 15 // 15 * 2s = 30s max
+	)
+
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	for attempts := 0; attempts < maxAttempts; attempts++ {
+		status, err := k.getAuthStatus(referenceNumber, authToken)
+		if err != nil {
+			return fmt.Errorf("error polling auth status: %v", err)
+		}
+
+		if status.ProcessingCode == http.StatusOK {
+			return nil
+		}
+
+		if status.ProcessingCode != 100 {
+			return fmt.Errorf("unexpected auth processing status: %d - %s", status.ProcessingCode, status.ProcessingDescription)
+		}
+
+		<-ticker.C
+	}
+
+	return fmt.Errorf("auth status polling timed out after %d seconds", maxAttempts*int(pollInterval.Seconds()))
 }
 
 func (k *client) getAccessToken(authToken string) (AccessTokenResponse, error) {
