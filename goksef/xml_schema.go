@@ -114,18 +114,18 @@ type Zamowienie struct {
 }
 
 type WarunkiTransakcji struct {
-	Umowy []Umowa `xml:"Umowa,omitempty"`
+	Umowy []Umowa `xml:"Umowy,omitempty"`
 }
 
 type Umowa struct {
-	NrUmowy    string `xml:"NrUmowy,omitempty"`
-	DataUmowy  string `xml:"DataUmowy,omitempty"`
+	DataUmowy string `xml:"DataUmowy,omitempty"` // XSD pos 1
+	NrUmowy   string `xml:"NrUmowy,omitempty"`   // XSD pos 2
 }
 
 type DodatkowyOpis struct {
+	NrWiersza string `xml:"NrWiersza,omitempty"` // XSD pos 1 - must be first
 	Klucz     string `xml:"Klucz,omitempty"`
 	Wartosc   string `xml:"Wartosc,omitempty"`
-	NrWiersza string `xml:"NrWiersza,omitempty"`
 }
 
 type OkresFA struct {
@@ -163,6 +163,7 @@ type PMarzy struct {
 type FaWiersz struct {
 	NrWierszaFa string `xml:"NrWierszaFa"`
 	P7          string `xml:"P_7"`
+	PKWiU       string `xml:"PKWiU,omitempty"` // XSD pos: after P_7, before P_8A
 	P8A         string `xml:"P_8A"`
 	P8B         string `xml:"P_8B"`
 	P9A         string `xml:"P_9A"`
@@ -180,9 +181,8 @@ type FaWiersz struct {
 	// zw - zwolnione od podatku
 	// oo - odwrotne obciążenie
 	// np - nie podlega
-	P12   string `xml:"P_12"`
-	PKWiU string `xml:"PKWiU,omitempty"`
-	GTU   string `xml:"GTU,omitempty"`
+	P12 string `xml:"P_12"`
+	GTU string `xml:"GTU,omitempty"`
 }
 
 type Platnosc struct {
