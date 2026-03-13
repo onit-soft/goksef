@@ -107,7 +107,13 @@ type Fa struct {
 	RodzajFaktury string          `xml:"RodzajFaktury"`
 	FaWiersz      []FaWiersz      `xml:"FaWiersz"`
 	Platnosc      *Platnosc       `xml:"Platnosc,omitempty"`
+	Zamowienie    *Zamowienie     `xml:"Zamowienie,omitempty"`
 	DodatkowyOpis []DodatkowyOpis `xml:"DodatkowyOpis,omitempty"`
+}
+
+type Zamowienie struct {
+	NrZamowienia string `xml:"NrZamowienia,omitempty"`
+	DataZamowienia string `xml:"DataZamowienia,omitempty"`
 }
 
 type DodatkowyOpis struct {
