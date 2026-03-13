@@ -97,14 +97,15 @@ type Fa struct {
 	P13_11      string     `xml:"P_13_11,omitempty"`  // Suma wartości sprzedaży w procedurze marży
 	P15         string     `xml:"P_15"`               // Wartość brutto
 	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
-	// Element order per FA(3) XSD: Adnotacje → RodzajFaktury → FaWiersz → Platnosc → Zamowienie → WarunkiTransakcji → DodatkowyOpis
-	Adnotacje          *Adnotacje          `xml:"Adnotacje,omitempty"`
-	RodzajFaktury      string              `xml:"RodzajFaktury"`
-	FaWiersz           []FaWiersz          `xml:"FaWiersz"`
-	Platnosc           *Platnosc           `xml:"Platnosc,omitempty"`
-	Zamowienie         *Zamowienie         `xml:"Zamowienie,omitempty"`
-	WarunkiTransakcji  *WarunkiTransakcji  `xml:"WarunkiTransakcji,omitempty"`
-	DodatkowyOpis      []DodatkowyOpis     `xml:"DodatkowyOpis,omitempty"`
+	// Element order per FA(3) XSD (line numbers from schemat.xsd):
+	// Adnotacje(2641) → RodzajFaktury(2875) → DodatkowyOpis(3042) → FaWiersz(3078) → Platnosc(3281) → WarunkiTransakcji(3441) → Zamowienie(3608)
+	Adnotacje         *Adnotacje         `xml:"Adnotacje,omitempty"`
+	RodzajFaktury     string             `xml:"RodzajFaktury"`
+	DodatkowyOpis     []DodatkowyOpis    `xml:"DodatkowyOpis,omitempty"`
+	FaWiersz          []FaWiersz         `xml:"FaWiersz"`
+	Platnosc          *Platnosc          `xml:"Platnosc,omitempty"`
+	WarunkiTransakcji *WarunkiTransakcji `xml:"WarunkiTransakcji,omitempty"`
+	Zamowienie        *Zamowienie        `xml:"Zamowienie,omitempty"`
 }
 
 type Zamowienie struct {
