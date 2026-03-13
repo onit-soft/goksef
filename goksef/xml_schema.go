@@ -95,12 +95,12 @@ type Fa struct {
 	P13_9       string     `xml:"P_13_9,omitempty"`   // Suma wartości świadczenia usług, o których mowa w art. 100 ust. 1 pkt 4 ustawy
 	P13_10      string     `xml:"P_13_10,omitempty"`  // Suma wartości sprzedaży w procedurze odwrotnego obciążenia, dla której podatnikiem jest nabywca
 	P13_11      string     `xml:"P_13_11,omitempty"`  // Suma wartości sprzedaży w procedurze marży
-	P15         string  `xml:"P_15"`               // Wartość brutto
-	KursWalutyZ float32 `xml:"KursWalutyZ,omitempty"`
-	// Element order per FA(3) XSD: FaWiersz → FaWierszCtrl → Adnotacje → RodzajFaktury → Platnosc → Zamowienie → FakturaPowiazana → WarunkiTransakcji → DodatkowyOpis
-	FaWiersz      []FaWiersz      `xml:"FaWiersz"`
+	P15         string     `xml:"P_15"`               // Wartość brutto
+	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
+	// Element order per FA(3) XSD: P_15 → KursWalutyZ → Adnotacje → RodzajFaktury → FaWiersz → Platnosc → Zamowienie → DodatkowyOpis
 	Adnotacje     *Adnotacje      `xml:"Adnotacje,omitempty"`
 	RodzajFaktury string          `xml:"RodzajFaktury"`
+	FaWiersz      []FaWiersz      `xml:"FaWiersz"`
 	Platnosc      *Platnosc       `xml:"Platnosc,omitempty"`
 	Zamowienie    *Zamowienie     `xml:"Zamowienie,omitempty"`
 	DodatkowyOpis []DodatkowyOpis `xml:"DodatkowyOpis,omitempty"`
