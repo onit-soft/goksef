@@ -95,17 +95,12 @@ type Fa struct {
 	P13_9       string     `xml:"P_13_9,omitempty"`   // Suma wartości świadczenia usług, o których mowa w art. 100 ust. 1 pkt 4 ustawy
 	P13_10      string     `xml:"P_13_10,omitempty"`  // Suma wartości sprzedaży w procedurze odwrotnego obciążenia, dla której podatnikiem jest nabywca
 	P13_11      string     `xml:"P_13_11,omitempty"`  // Suma wartości sprzedaży w procedurze marży
-	P15         string     `xml:"P_15"`               // Wartość brutto
-	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
-	Adnotacje   *Adnotacje `xml:"Adnotacje,omitempty"`
-	// VAT - Faktura podstawowa
-	// KOR - Faktura korygująca
-	// ZAL - Faktura zaliczkowa. Faktura dokumentująca otrzymanie zapłaty lub jej części przed dokonaniem czynności
-	// ROZ - Faktura rozliczeniowa
-	// KOR_ZAL - Faktura korygująca fakturę zaliczkową
-	// KOR_ROZ - Faktura korygująca fakturę rozliczeniową
-	RodzajFaktury string          `xml:"RodzajFaktury"`
+	P15         string  `xml:"P_15"`               // Wartość brutto
+	KursWalutyZ float32 `xml:"KursWalutyZ,omitempty"`
+	// Element order per FA(3) XSD: FaWiersz → FaWierszCtrl → Adnotacje → RodzajFaktury → Platnosc → Zamowienie → FakturaPowiazana → WarunkiTransakcji → DodatkowyOpis
 	FaWiersz      []FaWiersz      `xml:"FaWiersz"`
+	Adnotacje     *Adnotacje      `xml:"Adnotacje,omitempty"`
+	RodzajFaktury string          `xml:"RodzajFaktury"`
 	Platnosc      *Platnosc       `xml:"Platnosc,omitempty"`
 	Zamowienie    *Zamowienie     `xml:"Zamowienie,omitempty"`
 	DodatkowyOpis []DodatkowyOpis `xml:"DodatkowyOpis,omitempty"`
