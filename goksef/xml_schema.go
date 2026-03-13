@@ -97,18 +97,28 @@ type Fa struct {
 	P13_11      string     `xml:"P_13_11,omitempty"`  // Suma wartości sprzedaży w procedurze marży
 	P15         string     `xml:"P_15"`               // Wartość brutto
 	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
-	// Element order per FA(3) XSD: P_15 → KursWalutyZ → Adnotacje → RodzajFaktury → FaWiersz → Platnosc → Zamowienie → DodatkowyOpis
-	Adnotacje     *Adnotacje      `xml:"Adnotacje,omitempty"`
-	RodzajFaktury string          `xml:"RodzajFaktury"`
-	FaWiersz      []FaWiersz      `xml:"FaWiersz"`
-	Platnosc      *Platnosc       `xml:"Platnosc,omitempty"`
-	Zamowienie    *Zamowienie     `xml:"Zamowienie,omitempty"`
-	DodatkowyOpis []DodatkowyOpis `xml:"DodatkowyOpis,omitempty"`
+	// Element order per FA(3) XSD: Adnotacje → RodzajFaktury → FaWiersz → Platnosc → Zamowienie → WarunkiTransakcji → DodatkowyOpis
+	Adnotacje          *Adnotacje          `xml:"Adnotacje,omitempty"`
+	RodzajFaktury      string              `xml:"RodzajFaktury"`
+	FaWiersz           []FaWiersz          `xml:"FaWiersz"`
+	Platnosc           *Platnosc           `xml:"Platnosc,omitempty"`
+	Zamowienie         *Zamowienie         `xml:"Zamowienie,omitempty"`
+	WarunkiTransakcji  *WarunkiTransakcji  `xml:"WarunkiTransakcji,omitempty"`
+	DodatkowyOpis      []DodatkowyOpis     `xml:"DodatkowyOpis,omitempty"`
 }
 
 type Zamowienie struct {
 	NrZamowienia string `xml:"NrZamowienia,omitempty"`
 	DataZamowienia string `xml:"DataZamowienia,omitempty"`
+}
+
+type WarunkiTransakcji struct {
+	Umowy []Umowa `xml:"Umowa,omitempty"`
+}
+
+type Umowa struct {
+	NrUmowy    string `xml:"NrUmowy,omitempty"`
+	DataUmowy  string `xml:"DataUmowy,omitempty"`
 }
 
 type DodatkowyOpis struct {
