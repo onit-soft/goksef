@@ -73,8 +73,8 @@ type Fa struct {
 	WZ          string     `xml:"WZ,omitempty"`       // Numer dokumentów WZ
 	OkresFA     *OkresFA   `xml:"OkresFA,omitempty"`  // Okres którego dotyczy faktura
 	P6          string     `xml:"P_6"`                // Data wykonania usługi
-	P13_1       string     `xml:"P_13_1"`             // Wartość netto
-	P14_1       string     `xml:"P_14_1"`             // Wartość VAT
+	P13_1       string     `xml:"P_13_1,omitempty"`   // Wartość netto
+	P14_1       string     `xml:"P_14_1,omitempty"`   // Wartość VAT
 	P14_1W      string     `xml:"P_14_1W,omitempty"`  // Wartość VAT Przeliczona z innej waluty
 	P13_2       string     `xml:"P_13_2,omitempty"`   // Wartości Netto objętej stawką obniżoną pierwszą 8%
 	P14_2       string     `xml:"P_14_2,omitempty"`   // Wartości VAT objętej stawką obniżoną pierwszą 8%
