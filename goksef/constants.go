@@ -26,6 +26,7 @@ const (
 	APIv2CloseOnlineSessionPath    = "/api/v2/sessions/online/%s/close"
 	APIv2ListSessionInvoicesPath   = "/api/v2/sessions/%s/invoices"
 	APIv2ListFailedInvoicesPath    = "/api/v2/sessions/%s/invoices/failed"
+	APIv2SessionUPOPath            = "/api/v2/sessions/%s/upo"
 )
 
 const (

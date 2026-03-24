@@ -46,6 +46,7 @@ type Client interface {
 	GetInvoiceExportPart(url string) ([]byte, error)
 	ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse, error)
 	ExportInvoicesWithMetadata(filter Filter) ([]FakturaWithMetadata, error)
+	GetSessionUPO(sessionRef string) ([]byte, error)
 }
 
 type request struct {
@@ -651,6 +652,21 @@ func (k *client) ListFailedInvoices(referenceNumber string) (InvoiceListResponse
 	}
 
 	return invoiceListResponse, nil
+}
+
+func (k *client) GetSessionUPO(sessionRef string) ([]byte, error) {
+	response, statusCode, err := k.getWithAuth(
+		fmt.Sprintf(APIv2SessionUPOPath, sessionRef),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("error getting session UPO, status code %d, response: %s", statusCode, response)
+	}
+
+	return response, nil
 }
 
 func (k *client) getAuthChallange() (authChallange AuthChallange, err error) {
