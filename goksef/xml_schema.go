@@ -199,8 +199,9 @@ type RachunekBankowy struct {
 }
 
 type Stopka struct {
-	Rejestry   []Rejestr    `xml:"Rejestry,omitempty"`
+	// XSD order: Informacje(0..3) → Rejestry(0..100)
 	Informacje []Informacje `xml:"Informacje,omitempty"`
+	Rejestry   []Rejestr    `xml:"Rejestry,omitempty"`
 }
 
 type Rejestr struct {
