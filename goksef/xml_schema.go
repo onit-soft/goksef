@@ -45,13 +45,13 @@ type Podmiot struct {
 }
 
 type DaneIdentyfikacyjne struct {
-	NIP      string `xml:"NIP"`
-	Nazwa    string `xml:"Nazwa"`
+	NIP      string `xml:"NIP,omitempty"`
 	KodUE    string `xml:"KodUE,omitempty"`
 	NrVatUE  string `xml:"NrVatUE,omitempty"`
 	KodKraju string `xml:"KodKraju,omitempty"`
 	NrID     string `xml:"NrID,omitempty"`
 	BrakID   string `xml:"BrakID,omitempty"`
+	Nazwa    string `xml:"Nazwa"`
 }
 
 type Adres struct {
