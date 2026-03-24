@@ -169,18 +169,15 @@ type FaWiersz struct {
 	P9A         string `xml:"P_9A"`
 	P9B         string `xml:"P_9B,omitempty"`
 	P11         string `xml:"P_11"`
-	// Available vat rates:
-	// 23
-	// 22
-	// 8
-	// 7
-	// 5
-	// 4
-	// 3
-	// 0
-	// zw - zwolnione od podatku
-	// oo - odwrotne obciążenie
-	// np - nie podlega
+	// FA(3) 1-0E TStawkaPodatku enumeration:
+	// 23, 22, 8, 7, 5, 4, 3
+	// 0 KR  - stawka 0% sprzedaż krajowa
+	// 0 WDT - stawka 0% wewnątrzwspólnotowa dostawa towarów
+	// 0 EX  - stawka 0% eksport towarów
+	// zw    - zwolnione od podatku
+	// oo    - odwrotne obciążenie
+	// np I  - niepodlegające (poza terytorium kraju)
+	// np II - niepodlegające (na terytorium kraju)
 	P12 string `xml:"P_12"`
 	GTU string `xml:"GTU,omitempty"`
 }
