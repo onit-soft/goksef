@@ -202,7 +202,15 @@ type RachunekBankowy struct {
 }
 
 type Stopka struct {
+	Rejestry   []Rejestr    `xml:"Rejestry,omitempty"`
 	Informacje []Informacje `xml:"Informacje,omitempty"`
+}
+
+type Rejestr struct {
+	PelnaNazwa string `xml:"PelnaNazwa"`
+	KRS        string `xml:"KRS,omitempty"`
+	REGON      string `xml:"REGON,omitempty"`
+	BDO        string `xml:"BDO,omitempty"`
 }
 
 type Informacje struct {

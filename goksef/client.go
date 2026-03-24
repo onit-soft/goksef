@@ -656,7 +656,7 @@ func (k *client) ListFailedInvoices(referenceNumber string) (InvoiceListResponse
 
 func (k *client) GetSessionUPO(sessionRef string) ([]byte, error) {
 	response, statusCode, err := k.getWithAuth(
-		fmt.Sprintf(APIv2SessionUPOPath, sessionRef),
+		fmt.Sprintf(APIv2GetSessionUPOPath, sessionRef),
 	)
 	if err != nil {
 		return nil, err
