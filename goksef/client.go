@@ -46,7 +46,7 @@ type Client interface {
 	GetInvoiceExportPart(url string) ([]byte, error)
 	ExportInvoices(filter Filter) ([]Faktura, []InvoiceListResponse, error)
 	ExportInvoicesWithMetadata(filter Filter) ([]FakturaWithMetadata, error)
-	GetSessionUPO(sessionRef string) ([]byte, error)
+	GetInvoiceUPOByKsefNumber(sessionRef, ksefNumber string) ([]byte, error)
 }
 
 type request struct {
@@ -654,16 +654,16 @@ func (k *client) ListFailedInvoices(referenceNumber string) (InvoiceListResponse
 	return invoiceListResponse, nil
 }
 
-func (k *client) GetSessionUPO(sessionRef string) ([]byte, error) {
+func (k *client) GetInvoiceUPOByKsefNumber(sessionRef, ksefNumber string) ([]byte, error) {
 	response, statusCode, err := k.getWithAuth(
-		fmt.Sprintf(APIv2GetSessionUPOPath, sessionRef),
+		fmt.Sprintf(APIv2GetInvoiceUPOByKsefNumberPath, sessionRef, ksefNumber),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	if statusCode != http.StatusOK {
-		return nil, fmt.Errorf("error getting session UPO, status code %d, response: %s", statusCode, response)
+		return nil, fmt.Errorf("error getting invoice UPO, status code %d, response: %s", statusCode, response)
 	}
 
 	return response, nil
