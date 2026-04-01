@@ -98,10 +98,15 @@ type Fa struct {
 	P15         string     `xml:"P_15"`               // Wartość brutto
 	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
 	// Element order per FA(3) XSD (line numbers from schemat.xsd):
-	// Adnotacje(2641) → RodzajFaktury(2875) → DodatkowyOpis(3042) → FaWiersz(3078) → Platnosc(3281) → WarunkiTransakcji(3441) → Zamowienie(3608)
-	Adnotacje         *Adnotacje         `xml:"Adnotacje,omitempty"`
-	RodzajFaktury     string             `xml:"RodzajFaktury"`
-	DodatkowyOpis     []DodatkowyOpis    `xml:"DodatkowyOpis,omitempty"`
+	// Adnotacje → RodzajFaktury → [PrzyczynaKorekty → TypKorekty → DaneFaKorygowanej → OkresFaKorygowanej → NrFaKorygowany] → DodatkowyOpis → FaWiersz → Platnosc → WarunkiTransakcji → Zamowienie
+	Adnotacje          *Adnotacje          `xml:"Adnotacje,omitempty"`
+	RodzajFaktury      string              `xml:"RodzajFaktury"`
+	PrzyczynaKorekty   string              `xml:"PrzyczynaKorekty,omitempty"`
+	TypKorekty         string              `xml:"TypKorekty,omitempty"`           // 1=wstecz, 2=na bieżąco, 3=inna data
+	DaneFaKorygowanej  []DaneFaKorygowanej `xml:"DaneFaKorygowanej,omitempty"`
+	OkresFaKorygowanej string              `xml:"OkresFaKorygowanej,omitempty"`
+	NrFaKorygowany     string              `xml:"NrFaKorygowany,omitempty"`
+	DodatkowyOpis      []DodatkowyOpis     `xml:"DodatkowyOpis,omitempty"`
 	FaWiersz          []FaWiersz         `xml:"FaWiersz"`
 	Platnosc          *Platnosc          `xml:"Platnosc,omitempty"`
 	WarunkiTransakcji *WarunkiTransakcji `xml:"WarunkiTransakcji,omitempty"`
@@ -109,8 +114,16 @@ type Fa struct {
 }
 
 type Zamowienie struct {
-	NrZamowienia string `xml:"NrZamowienia,omitempty"`
+	NrZamowienia   string `xml:"NrZamowienia,omitempty"`
 	DataZamowienia string `xml:"DataZamowienia,omitempty"`
+}
+
+type DaneFaKorygowanej struct {
+	DataWystFaKorygowanej string `xml:"DataWystFaKorygowanej"`         // Data wystawienia korygowanej faktury
+	NrFaKorygowanej       string `xml:"NrFaKorygowanej"`               // Numer korygowanej faktury
+	NrKSeF                string `xml:"NrKSeF,omitempty"`               // "1" jeśli oryginał w KSeF
+	NrKSeFFaKorygowanej   string `xml:"NrKSeFFaKorygowanej,omitempty"` // Numer KSeF oryginału
+	NrKSeFN               string `xml:"NrKSeFN,omitempty"`              // "1" jeśli oryginał poza KSeF
 }
 
 type WarunkiTransakcji struct {
@@ -178,8 +191,9 @@ type FaWiersz struct {
 	// oo    - odwrotne obciążenie
 	// np I  - niepodlegające (poza terytorium kraju)
 	// np II - niepodlegające (na terytorium kraju)
-	P12 string `xml:"P_12"`
-	GTU string `xml:"GTU,omitempty"`
+	P12       string `xml:"P_12"`
+	GTU       string `xml:"GTU,omitempty"`
+	StanPrzed string `xml:"StanPrzed,omitempty"` // "1" = wiersz przed korektą
 }
 
 type Platnosc struct {
