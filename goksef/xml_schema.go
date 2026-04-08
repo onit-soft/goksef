@@ -108,7 +108,7 @@ type Fa struct {
 	P13_10      string     `xml:"P_13_10,omitempty"`  // Suma wartości sprzedaży w procedurze odwrotnego obciążenia, dla której podatnikiem jest nabywca
 	P13_11      string     `xml:"P_13_11,omitempty"`  // Suma wartości sprzedaży w procedurze marży
 	P15         string     `xml:"P_15"`               // Wartość brutto
-	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
+	KursWalutyZ string     `xml:"KursWalutyZ,omitempty"`
 	// Element order per FA(3) XSD:
 	// Adnotacje → RodzajFaktury → [PrzyczynaKorekty → TypKorekty → DaneFaKorygowanej → OkresFaKorygowanej → NrFaKorygowany → Podmiot1K → Podmiot2K → P_15ZK → KursWalutyZK] → DodatkowyOpis → FaWiersz → Platnosc → WarunkiTransakcji → Zamowienie
 	Adnotacje          *Adnotacje          `xml:"Adnotacje,omitempty"`
