@@ -44,6 +44,18 @@ type Podmiot struct {
 	GV                  string              `xml:"GV,omitempty"`
 }
 
+type Podmiot1K struct {
+	PrefiksPodatnika    string              `xml:"PrefiksPodatnika,omitempty"`
+	DaneIdentyfikacyjne DaneIdentyfikacyjne `xml:"DaneIdentyfikacyjne"`
+	Adres               Adres               `xml:"Adres"`
+}
+
+type Podmiot2K struct {
+	DaneIdentyfikacyjne DaneIdentyfikacyjne `xml:"DaneIdentyfikacyjne"`
+	Adres               Adres               `xml:"Adres,omitempty"`
+	IDNabywcy           string              `xml:"IDNabywcy,omitempty"`
+}
+
 type DaneIdentyfikacyjne struct {
 	NIP      string `xml:"NIP,omitempty"`
 	KodUE    string `xml:"KodUE,omitempty"`
@@ -97,8 +109,8 @@ type Fa struct {
 	P13_11      string     `xml:"P_13_11,omitempty"`  // Suma wartości sprzedaży w procedurze marży
 	P15         string     `xml:"P_15"`               // Wartość brutto
 	KursWalutyZ float32    `xml:"KursWalutyZ,omitempty"`
-	// Element order per FA(3) XSD (line numbers from schemat.xsd):
-	// Adnotacje → RodzajFaktury → [PrzyczynaKorekty → TypKorekty → DaneFaKorygowanej → OkresFaKorygowanej → NrFaKorygowany] → DodatkowyOpis → FaWiersz → Platnosc → WarunkiTransakcji → Zamowienie
+	// Element order per FA(3) XSD:
+	// Adnotacje → RodzajFaktury → [PrzyczynaKorekty → TypKorekty → DaneFaKorygowanej → OkresFaKorygowanej → NrFaKorygowany → Podmiot1K → Podmiot2K → P_15ZK → KursWalutyZK] → DodatkowyOpis → FaWiersz → Platnosc → WarunkiTransakcji → Zamowienie
 	Adnotacje          *Adnotacje          `xml:"Adnotacje,omitempty"`
 	RodzajFaktury      string              `xml:"RodzajFaktury"`
 	PrzyczynaKorekty   string              `xml:"PrzyczynaKorekty,omitempty"`
@@ -106,8 +118,12 @@ type Fa struct {
 	DaneFaKorygowanej  []DaneFaKorygowanej `xml:"DaneFaKorygowanej,omitempty"`
 	OkresFaKorygowanej string              `xml:"OkresFaKorygowanej,omitempty"`
 	NrFaKorygowany     string              `xml:"NrFaKorygowany,omitempty"`
+	Podmiot1K          *Podmiot1K          `xml:"Podmiot1K,omitempty"`
+	Podmiot2K          []Podmiot2K         `xml:"Podmiot2K,omitempty"`     // 0..101
+	P15ZK              string              `xml:"P_15ZK,omitempty"`
+	KursWalutyZK       string              `xml:"KursWalutyZK,omitempty"`
 	DodatkowyOpis      []DodatkowyOpis     `xml:"DodatkowyOpis,omitempty"`
-	FaWiersz          []FaWiersz         `xml:"FaWiersz"`
+	FaWiersz          []FaWiersz         `xml:"FaWiersz,omitempty"`
 	Platnosc          *Platnosc          `xml:"Platnosc,omitempty"`
 	WarunkiTransakcji *WarunkiTransakcji `xml:"WarunkiTransakcji,omitempty"`
 	Zamowienie        *Zamowienie        `xml:"Zamowienie,omitempty"`
