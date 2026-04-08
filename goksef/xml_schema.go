@@ -191,13 +191,22 @@ type PMarzy struct {
 
 type FaWiersz struct {
 	NrWierszaFa string `xml:"NrWierszaFa"`
+	UU_ID       string `xml:"UU_ID,omitempty"`
+	P6A         string `xml:"P_6A,omitempty"`
 	P7          string `xml:"P_7"`
-	PKWiU       string `xml:"PKWiU,omitempty"` // XSD pos: after P_7, before P_8A
+	Indeks      string `xml:"Indeks,omitempty"`
+	GTIN        string `xml:"GTIN,omitempty"`
+	PKWiU       string `xml:"PKWiU,omitempty"`
+	CN          string `xml:"CN,omitempty"`
+	PKOB        string `xml:"PKOB,omitempty"`
 	P8A         string `xml:"P_8A"`
 	P8B         string `xml:"P_8B"`
 	P9A         string `xml:"P_9A"`
 	P9B         string `xml:"P_9B,omitempty"`
+	P10         string `xml:"P_10,omitempty"`
 	P11         string `xml:"P_11"`
+	P11A        string `xml:"P_11A,omitempty"`
+	P11Vat      string `xml:"P_11Vat,omitempty"`
 	// FA(3) 1-0E TStawkaPodatku enumeration:
 	// 23, 22, 8, 7, 5, 4, 3
 	// 0 KR  - stawka 0% sprzedaż krajowa
@@ -207,9 +216,14 @@ type FaWiersz struct {
 	// oo    - odwrotne obciążenie
 	// np I  - niepodlegające (poza terytorium kraju)
 	// np II - niepodlegające (na terytorium kraju)
-	P12       string `xml:"P_12"`
-	GTU       string `xml:"GTU,omitempty"`
-	StanPrzed string `xml:"StanPrzed,omitempty"` // "1" = wiersz przed korektą
+	P12         string `xml:"P_12"`
+	P12XII      string `xml:"P_12_XII,omitempty"`
+	P12Zal15    string `xml:"P_12_Zal_15,omitempty"`
+	KwotaAkcyzy string `xml:"KwotaAkcyzy,omitempty"`
+	GTU         string `xml:"GTU,omitempty"`
+	Procedura   string `xml:"Procedura,omitempty"`
+	KursWaluty  string `xml:"KursWaluty,omitempty"`
+	StanPrzed   string `xml:"StanPrzed,omitempty"` // "1" = wiersz przed korektą
 }
 
 type Platnosc struct {
