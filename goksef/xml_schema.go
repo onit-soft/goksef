@@ -227,6 +227,9 @@ type FaWiersz struct {
 }
 
 type Platnosc struct {
+	// XSD FA(3) 1-0E: Zaplacono+DataZaplaty muszą być przed TerminPlatnosci (kolejność per XSD)
+	Zaplacono       string           `xml:"Zaplacono,omitempty"`   // "1" = należność zapłacona w całości
+	DataZaplaty     string           `xml:"DataZaplaty,omitempty"` // data zapłaty, wymagana gdy Zaplacono="1"
 	TerminPlatnosci *TerminPlatnosci `xml:"TerminPlatnosci,omitempty"`
 	FormaPlatnosci  string           `xml:"FormaPlatnosci"`
 	RachunekBankowy []RachunekBankowy `xml:"RachunekBankowy,omitempty"`
