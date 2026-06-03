@@ -233,6 +233,8 @@ type Platnosc struct {
 	TerminPlatnosci *TerminPlatnosci `xml:"TerminPlatnosci,omitempty"`
 	FormaPlatnosci  string           `xml:"FormaPlatnosci"`
 	RachunekBankowy []RachunekBankowy `xml:"RachunekBankowy,omitempty"`
+	// XSD FA(3) 1-0E: RachunekBankowyFaktora występuje po RachunekBankowy
+	RachunekBankowyFaktora []RachunekBankowy `xml:"RachunekBankowyFaktora,omitempty"`
 }
 
 type TerminPlatnosci struct {
