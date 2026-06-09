@@ -473,7 +473,6 @@ func (k *client) OpenOnlineSession(req OpenOnlineSessionRequest) (onlineSession 
 }
 
 func (k *client) CloseOnlineSession(referenceNumber string) error {
-
 	response, statusCode, err := k.postWithAuth(
 		fmt.Sprintf(APIv2CloseOnlineSessionPath, referenceNumber),
 		ContentTypeJSON,
@@ -564,7 +563,10 @@ func (k *client) SendInvoices(send SendInvoices) (string, error) {
 
 	err = k.CloseOnlineSession(session.ReferenceNumber)
 	if err != nil {
-		return "", err
+		// Return the session reference even on close error — invoices were already
+		// submitted and KSeF may have committed the session. The caller can poll
+		// for status; if the invoice is not there it will simply retry sending.
+		return session.ReferenceNumber, err
 	}
 
 	return session.ReferenceNumber, nil
