@@ -1,11 +1,29 @@
 package goksef
 
+import "github.com/onit-soft/goksef/goksef/xades"
+
 type KSEFAuthMethod int
 
 const (
 	KSEFAuthMethodUnknown KSEFAuthMethod = iota
 	KSEFAuthMethodCertificate
 	KSEFAuthMethodToken
+)
+
+// SubjectIdentifierType selects how KSeF is told to resolve the identity behind
+// a certificate-based XAdES authentication (AuthTokenRequest.SubjectIdentifierType).
+//
+// CertificateSubject is for qualified certificates from the general PKI, whose
+// Subject (NIP/PESEL) KSeF can resolve on its own. A "Certyfikat KSeF" — the
+// self-service certificate issued by KSeF's own CA (e.g. "CCK KSeF") — is not
+// resolvable that way and must use CertificateFingerprint instead, or KSeF
+// rejects the authentication with status 460 "Niepoprawny certyfikat" even
+// though the certificate itself is valid.
+type SubjectIdentifierType = xades.SubjectIdentifierTypeEnum
+
+const (
+	SubjectIdentifierTypeCertificateSubject     = xades.CertificateSubject
+	SubjectIdentifierTypeCertificateFingerprint = xades.CertificateFingerprint
 )
 
 const (

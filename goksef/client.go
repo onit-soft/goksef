@@ -28,6 +28,7 @@ type Client interface {
 	WithVatID(vatID string) Client
 	WithCommonName(commonName string) Client
 	WithCountryCode(countryCode string) Client
+	WithSubjectIdentifierType(subjectIdentifierType SubjectIdentifierType) Client
 	WithAccessToken(accessToken, refreshToken string, validUntil *time.Time) Client
 	GetAccessToken() (string, string, *time.Time)
 	RefreshAccessToken() error
@@ -65,6 +66,7 @@ type client struct {
 	commonName       string
 	countryCode      string
 	authMethod       KSEFAuthMethod
+	subjectIDType    SubjectIdentifierType
 
 	refreshToken string
 	accessToken  string
@@ -77,9 +79,10 @@ type client struct {
 
 func NewClient(baseURL string) Client {
 	return &client{
-		client:     http.Client{Timeout: 30 * time.Second},
-		baseURL:    baseURL,
-		authMethod: KSEFAuthMethodCertificate,
+		client:        http.Client{Timeout: 30 * time.Second},
+		baseURL:       baseURL,
+		authMethod:    KSEFAuthMethodCertificate,
+		subjectIDType: SubjectIdentifierTypeCertificateSubject,
 	}
 }
 
@@ -154,6 +157,11 @@ func (c *client) UseSelfSigned() error {
 
 func (c *client) WithAuthMethod(authMethod KSEFAuthMethod) Client {
 	c.authMethod = authMethod
+	return c
+}
+
+func (c *client) WithSubjectIdentifierType(subjectIdentifierType SubjectIdentifierType) Client {
+	c.subjectIDType = subjectIdentifierType
 	return c
 }
 
@@ -705,7 +713,7 @@ func (k *client) initializeAccessToken() error {
 		authToken, err := xades.NewAuthTokenRequestBuilder().
 			WithChallenge(authChallange.Challange).
 			WithContextNip(k.vatID).
-			WithSubjectType(xades.CertificateSubject).
+			WithSubjectType(k.subjectIDType).
 			Build()
 		if err != nil {
 			return err
