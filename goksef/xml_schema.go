@@ -12,10 +12,15 @@ type Faktura struct {
 	Naglowek  Naglowek `xml:"Naglowek"`
 	Podmiot1  Podmiot  `xml:"Podmiot1"`
 	Podmiot2  Podmiot  `xml:"Podmiot2"`
-	Podmiot3  *Podmiot `xml:"Podmiot3,omitempty"`
-	Fa        Fa       `xml:"Fa"`
-	NumerKsef string   `xml:"-"`
-	Stopka    Stopka   `xml:"Stopka"`
+	// FA(3) allows Podmiot3 0..100 times. A non-slice field would make
+	// encoding/xml merge every node into one struct: fields absent from a later
+	// node keep the earlier node's values, so Rola/Udzial of the factor end up
+	// attributed to the recipient's identity, with both xsd:choice arms
+	// (Rola vs RolaInna+OpisRoli) set at once.
+	Podmiot3  []Podmiot `xml:"Podmiot3,omitempty"`
+	Fa        Fa        `xml:"Fa"`
+	NumerKsef string    `xml:"-"`
+	Stopka    Stopka    `xml:"Stopka"`
 }
 
 type Naglowek struct {
