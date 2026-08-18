@@ -33,15 +33,23 @@ type KodFormularza struct {
 
 type Podmiot struct {
 	PrefiksPodatnika    string              `xml:"PrefiksPodatnika,omitempty"`
+	NrEORI              string              `xml:"NrEORI,omitempty"`
 	DaneIdentyfikacyjne DaneIdentyfikacyjne `xml:"DaneIdentyfikacyjne"`
 	Adres               Adres               `xml:"Adres"`
 	AresKoresp          *Adres              `xml:"AdresKoresp,omitempty"`
 	DaneKontaktowe      *DaneKontaktowe     `xml:"DaneKontaktowe,omitempty"`
-	NrKlienta           string              `xml:"NrKlienta,omitempty"`
-	IDNabywcy           string              `xml:"IDNabywcy,omitempty"`
-	StatusInfoPodatnika string              `xml:"StatusInfoPodatnika,omitempty"`
-	JST                 string              `xml:"JST,omitempty"`
-	GV                  string              `xml:"GV,omitempty"`
+	// Rola/RolaInna/OpisRoli/Udzial belong to Podmiot3 only, yet live in this
+	// shared struct exactly like IDNabywcy/JST/GV, which are Podmiot2/Podmiot3
+	// specific too; omitempty keeps them off outgoing Podmiot1/Podmiot2 invoices.
+	Rola                string `xml:"Rola,omitempty"`
+	RolaInna            string `xml:"RolaInna,omitempty"`
+	OpisRoli            string `xml:"OpisRoli,omitempty"`
+	Udzial              string `xml:"Udzial,omitempty"`
+	NrKlienta           string `xml:"NrKlienta,omitempty"`
+	IDNabywcy           string `xml:"IDNabywcy,omitempty"`
+	StatusInfoPodatnika string `xml:"StatusInfoPodatnika,omitempty"`
+	JST                 string `xml:"JST,omitempty"`
+	GV                  string `xml:"GV,omitempty"`
 }
 
 type Podmiot1K struct {
