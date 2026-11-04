@@ -142,3 +142,143 @@ func TestPodmiot3EmptySliceMarshalsAway(t *testing.T) {
 		t.Errorf("marshalled invoice contains an empty Podmiot3: %s", out)
 	}
 }
+
+// Odwzorowanie sekcji "Warunki transakcji" / "Transport" / "Wysyłka" z podglądu
+// faktury w aplikacji KSeF (faktura 00003/11/2026/Just, NIP 7591764074).
+const warunkiTransakcjiDoc = `<Faktura>
+	<Fa>
+		<WarunkiTransakcji>
+			<Zamowienia>
+				<NrZamowienia>14631/2026</NrZamowienia>
+			</Zamowienia>
+			<NrPartiiTowaru>PARTIA-1</NrPartiiTowaru>
+			<NrPartiiTowaru>PARTIA-2</NrPartiiTowaru>
+			<WarunkiDostawy>DAP</WarunkiDostawy>
+			<Transport>
+				<RodzajTransportu>3</RodzajTransportu>
+				<Przewoznik>
+					<DaneIdentyfikacyjne>
+						<NIP>7591764074</NIP>
+						<Nazwa>JUST WAY TSL</Nazwa>
+					</DaneIdentyfikacyjne>
+					<AdresPrzewoznika>
+						<KodKraju>PL</KodKraju>
+						<AdresL1>ul. Testowa 1, 42-200 Częstochowa</AdresL1>
+					</AdresPrzewoznika>
+				</Przewoznik>
+				<NrZleceniaTransportu>ZL0110/10/2026/PC</NrZleceniaTransportu>
+				<LadunekInny>1</LadunekInny>
+				<OpisInnegoLadunku>brak informacji</OpisInnegoLadunku>
+				<DataGodzZakTransportu>2026-10-30T00:00:00Z</DataGodzZakTransportu>
+				<WysylkaZ>
+					<KodKraju>PL</KodKraju>
+					<AdresL1>42200 Częstochowa</AdresL1>
+				</WysylkaZ>
+				<WysylkaDo>
+					<KodKraju>PL</KodKraju>
+					<AdresL1>64360 Zbąszyń</AdresL1>
+				</WysylkaDo>
+			</Transport>
+		</WarunkiTransakcji>
+	</Fa>
+</Faktura>`
+
+func TestWarunkiTransakcjiUnmarshal(t *testing.T) {
+	var faktura Faktura
+	if err := xml.Unmarshal([]byte(warunkiTransakcjiDoc), &faktura); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+
+	wt := faktura.Fa.WarunkiTransakcji
+	if wt == nil {
+		t.Fatal("WarunkiTransakcji = nil")
+	}
+	if len(wt.Zamowienia) != 1 || wt.Zamowienia[0].NrZamowienia != "14631/2026" {
+		t.Errorf("Zamowienia = %+v, want one NrZamowienia 14631/2026", wt.Zamowienia)
+	}
+	if len(wt.NrPartiiTowaru) != 2 || wt.NrPartiiTowaru[1] != "PARTIA-2" {
+		t.Errorf("NrPartiiTowaru = %v, want [PARTIA-1 PARTIA-2]", wt.NrPartiiTowaru)
+	}
+	if wt.WarunkiDostawy != "DAP" {
+		t.Errorf("WarunkiDostawy = %q, want DAP", wt.WarunkiDostawy)
+	}
+
+	if len(wt.Transport) != 1 {
+		t.Fatalf("len(Transport) = %d, want 1", len(wt.Transport))
+	}
+	tr := wt.Transport[0]
+	if tr.RodzajTransportu != "3" {
+		t.Errorf("RodzajTransportu = %q, want 3", tr.RodzajTransportu)
+	}
+	if tr.NrZleceniaTransportu != "ZL0110/10/2026/PC" {
+		t.Errorf("NrZleceniaTransportu = %q", tr.NrZleceniaTransportu)
+	}
+	if tr.LadunekInny != "1" || tr.OpisInnegoLadunku != "brak informacji" {
+		t.Errorf("ładunek = %q/%q", tr.LadunekInny, tr.OpisInnegoLadunku)
+	}
+	if tr.OpisLadunku != "" {
+		t.Errorf("OpisLadunku = %q, drugie ramię xsd:choice nie powinno być ustawione", tr.OpisLadunku)
+	}
+	if tr.DataGodzZakTransportu != "2026-10-30T00:00:00Z" {
+		t.Errorf("DataGodzZakTransportu = %q", tr.DataGodzZakTransportu)
+	}
+	if tr.Przewoznik == nil {
+		t.Fatal("Przewoznik = nil")
+	}
+	if tr.Przewoznik.DaneIdentyfikacyjne.NIP != "7591764074" {
+		t.Errorf("Przewoznik NIP = %q", tr.Przewoznik.DaneIdentyfikacyjne.NIP)
+	}
+	if tr.Przewoznik.AdresPrzewoznika.AdresL1 != "ul. Testowa 1, 42-200 Częstochowa" {
+		t.Errorf("AdresPrzewoznika = %+v", tr.Przewoznik.AdresPrzewoznika)
+	}
+	if tr.WysylkaZ == nil || tr.WysylkaZ.AdresL1 != "42200 Częstochowa" {
+		t.Errorf("WysylkaZ = %+v", tr.WysylkaZ)
+	}
+	if tr.WysylkaDo == nil || tr.WysylkaDo.AdresL1 != "64360 Zbąszyń" {
+		t.Errorf("WysylkaDo = %+v", tr.WysylkaDo)
+	}
+}
+
+// Marshaling WarunkiTransakcji jest używany przy wystawianiu faktur, a KSeF
+// odrzuca dokument z elementami w innej kolejności niż xsd:sequence z FA(3).
+func TestWarunkiTransakcjiMarshalKeepsXSDOrder(t *testing.T) {
+	faktura := Faktura{Fa: Fa{WarunkiTransakcji: &WarunkiTransakcji{
+		Umowy:                []Umowa{{NrUmowy: "U/1"}},
+		Zamowienia:           []ZamowienieWT{{NrZamowienia: "14631/2026"}},
+		NrPartiiTowaru:       []string{"PARTIA-1"},
+		WarunkiDostawy:       "DAP",
+		Transport:            []Transport{{RodzajTransportu: "3", NrZleceniaTransportu: "ZL/1", WysylkaDo: &Adres{KodKraju: "PL", AdresL1: "64360 Zbąszyń"}}},
+		PodmiotPosredniczacy: "1",
+	}}}
+
+	out, err := xml.Marshal(faktura)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+
+	order := []string{"<Umowy>", "<Zamowienia>", "<NrPartiiTowaru>", "<WarunkiDostawy>", "<Transport>", "<PodmiotPosredniczacy>"}
+	prev := -1
+	for _, el := range order {
+		at := strings.Index(string(out), el)
+		if at < 0 {
+			t.Fatalf("brak %s w %s", el, out)
+		}
+		if at < prev {
+			t.Fatalf("%s poza kolejnością XSD: %s", el, out)
+		}
+		prev = at
+	}
+
+	trOrder := []string{"<RodzajTransportu>", "<NrZleceniaTransportu>", "<WysylkaDo>"}
+	prev = -1
+	for _, el := range trOrder {
+		at := strings.Index(string(out), el)
+		if at < 0 {
+			t.Fatalf("brak %s w %s", el, out)
+		}
+		if at < prev {
+			t.Fatalf("%s poza kolejnością XSD: %s", el, out)
+		}
+		prev = at
+	}
+}

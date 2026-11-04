@@ -143,9 +143,35 @@ type Fa struct {
 	Zamowienie        *Zamowienie        `xml:"Zamowienie,omitempty"`
 }
 
+// Zamowienie to Fa/Zamowienie z XSD FA(3): dane zamówienia lub umowy dla
+// faktury zaliczkowej (art. 106f ust. 1 pkt 4 ustawy). NIE mylić z
+// WarunkiTransakcji/Zamowienia (numer zamówienia handlowego) — to ZamowienieWT.
 type Zamowienie struct {
-	NrZamowienia   string `xml:"NrZamowienia,omitempty"`
-	DataZamowienia string `xml:"DataZamowienia,omitempty"`
+	WartoscZamowienia string             `xml:"WartoscZamowienia"`
+	ZamowienieWiersz  []ZamowienieWiersz `xml:"ZamowienieWiersz,omitempty"` // 1..10000
+}
+
+type ZamowienieWiersz struct {
+	NrWierszaZam string `xml:"NrWierszaZam"`
+	UU_IDZ       string `xml:"UU_IDZ,omitempty"`
+	P7Z          string `xml:"P_7Z,omitempty"`
+	IndeksZ      string `xml:"IndeksZ,omitempty"`
+	GTINZ        string `xml:"GTINZ,omitempty"`
+	PKWiUZ       string `xml:"PKWiUZ,omitempty"`
+	CNZ          string `xml:"CNZ,omitempty"`
+	PKOBZ        string `xml:"PKOBZ,omitempty"`
+	P8AZ         string `xml:"P_8AZ,omitempty"`
+	P8BZ         string `xml:"P_8BZ,omitempty"`
+	P9AZ         string `xml:"P_9AZ,omitempty"`
+	P11NettoZ    string `xml:"P_11NettoZ,omitempty"`
+	P11VatZ      string `xml:"P_11VatZ,omitempty"`
+	P12Z         string `xml:"P_12Z,omitempty"`
+	P12Z_XII     string `xml:"P_12Z_XII,omitempty"`
+	P12Z_Zal_15  string `xml:"P_12Z_Zal_15,omitempty"`
+	GTUZ         string `xml:"GTUZ,omitempty"`
+	ProceduraZ   string `xml:"ProceduraZ,omitempty"`
+	KwotaAkcyzyZ string `xml:"KwotaAkcyzyZ,omitempty"`
+	StanPrzedZ   string `xml:"StanPrzedZ,omitempty"`
 }
 
 type DaneFaKorygowanej struct {
@@ -156,13 +182,56 @@ type DaneFaKorygowanej struct {
 	NrKSeFN               string `xml:"NrKSeFN,omitempty"`              // "1" jeśli oryginał poza KSeF
 }
 
+// WarunkiTransakcji — kolejność pól MUSI odpowiadać xsd:sequence z FA(3),
+// bo ten sam struct służy do marshalingu przy wystawianiu faktur.
 type WarunkiTransakcji struct {
-	Umowy []Umowa `xml:"Umowy,omitempty"`
+	Umowy                []Umowa        `xml:"Umowy,omitempty"`          // 0..100
+	Zamowienia           []ZamowienieWT `xml:"Zamowienia,omitempty"`     // 0..100
+	NrPartiiTowaru       []string       `xml:"NrPartiiTowaru,omitempty"` // 0..1000
+	WarunkiDostawy       string         `xml:"WarunkiDostawy,omitempty"` // Incoterms
+	KursUmowny           string         `xml:"KursUmowny,omitempty"`
+	WalutaUmowna         string         `xml:"WalutaUmowna,omitempty"`
+	Transport            []Transport    `xml:"Transport,omitempty"` // 0..20
+	PodmiotPosredniczacy string         `xml:"PodmiotPosredniczacy,omitempty"`
 }
 
 type Umowa struct {
 	DataUmowy string `xml:"DataUmowy,omitempty"` // XSD pos 1
 	NrUmowy   string `xml:"NrUmowy,omitempty"`   // XSD pos 2
+}
+
+// ZamowienieWT to WarunkiTransakcji/Zamowienia — numer i data zamówienia
+// handlowego. W spedycji to jedno z miejsc, gdzie kontrahent wpisuje numer
+// zlecenia.
+type ZamowienieWT struct {
+	DataZamowienia string `xml:"DataZamowienia,omitempty"` // XSD pos 1
+	NrZamowienia   string `xml:"NrZamowienia,omitempty"`   // XSD pos 2
+}
+
+// Transport — WarunkiTransakcji/Transport. Dwa xsd:choice spłaszczone na pola
+// opcjonalne: RodzajTransportu XOR (TransportInny + OpisInnegoTransportu)
+// oraz OpisLadunku XOR (LadunekInny + OpisInnegoLadunku).
+type Transport struct {
+	RodzajTransportu     string      `xml:"RodzajTransportu,omitempty"` // 1..5,7,8 wg TRodzajTransportu
+	TransportInny        string      `xml:"TransportInny,omitempty"`
+	OpisInnegoTransportu string      `xml:"OpisInnegoTransportu,omitempty"`
+	Przewoznik           *Przewoznik `xml:"Przewoznik,omitempty"`
+	NrZleceniaTransportu string      `xml:"NrZleceniaTransportu,omitempty"`
+	OpisLadunku          string      `xml:"OpisLadunku,omitempty"` // 1..20 wg TLadunek
+	LadunekInny          string      `xml:"LadunekInny,omitempty"`
+	OpisInnegoLadunku    string      `xml:"OpisInnegoLadunku,omitempty"`
+	JednostkaOpakowania  string      `xml:"JednostkaOpakowania,omitempty"`
+
+	DataGodzRozpTransportu string  `xml:"DataGodzRozpTransportu,omitempty"`
+	DataGodzZakTransportu  string  `xml:"DataGodzZakTransportu,omitempty"`
+	WysylkaZ               *Adres  `xml:"WysylkaZ,omitempty"`
+	WysylkaPrzez           []Adres `xml:"WysylkaPrzez,omitempty"` // 0..20
+	WysylkaDo              *Adres  `xml:"WysylkaDo,omitempty"`
+}
+
+type Przewoznik struct {
+	DaneIdentyfikacyjne DaneIdentyfikacyjne `xml:"DaneIdentyfikacyjne"`
+	AdresPrzewoznika    Adres               `xml:"AdresPrzewoznika"`
 }
 
 type DodatkowyOpis struct {
