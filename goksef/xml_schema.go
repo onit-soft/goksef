@@ -318,6 +318,15 @@ type Platnosc struct {
 	RachunekBankowy []RachunekBankowy `xml:"RachunekBankowy,omitempty"`
 	// XSD FA(3) 1-0E: RachunekBankowyFaktora występuje po RachunekBankowy
 	RachunekBankowyFaktora []RachunekBankowy `xml:"RachunekBankowyFaktora,omitempty"`
+	// XSD FA(3) 1-0E: Skonto po RachunekBankowyFaktora, przed LinkDoPlatnosci/IPKSeF
+	Skonto *Skonto `xml:"Skonto,omitempty"`
+}
+
+// Skonto — warunkowy rabat za wcześniejszą zapłatę (art. 29a ust. 10 pkt 1 ustawy o VAT).
+// Faktura jest wystawiana na pełną kwotę; oba pola są w XSD obowiązkowe, gdy Skonto występuje.
+type Skonto struct {
+	WarunkiSkonta  string `xml:"WarunkiSkonta"`
+	WysokoscSkonta string `xml:"WysokoscSkonta"`
 }
 
 type TerminPlatnosci struct {

@@ -282,3 +282,60 @@ func TestWarunkiTransakcjiMarshalKeepsXSDOrder(t *testing.T) {
 		prev = at
 	}
 }
+
+// Skonto w FA(3) siedzi w Platnosc po RachunekBankowyFaktora (przed LinkDoPlatnosci).
+func TestPlatnoscSkontoMarshalKeepsXSDOrder(t *testing.T) {
+	faktura := Faktura{Fa: Fa{Platnosc: &Platnosc{
+		TerminPlatnosci:        &TerminPlatnosci{Termin: "2026-12-06"},
+		FormaPlatnosci:         "6",
+		RachunekBankowy:        []RachunekBankowy{{NrRB: "PL61109010140000071219812874"}},
+		RachunekBankowyFaktora: []RachunekBankowy{{NrRB: "PL27114020040000300201355387"}},
+		Skonto: &Skonto{
+			WarunkiSkonta:  "zapłata w ciągu 7 dni od daty wystawienia faktury, tj. do 2026-11-13",
+			WysokoscSkonta: "5% kwoty należności ogółem",
+		},
+	}}}
+
+	out, err := xml.Marshal(faktura)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	s := string(out)
+
+	order := []string{"<TerminPlatnosci>", "<FormaPlatnosci>", "<RachunekBankowy>", "<RachunekBankowyFaktora>", "<Skonto>", "<WarunkiSkonta>", "<WysokoscSkonta>"}
+	prev := -1
+	for _, el := range order {
+		at := strings.Index(s, el)
+		if at < 0 {
+			t.Fatalf("brak %s w %s", el, s)
+		}
+		if at < prev {
+			t.Fatalf("%s poza kolejnością XSD: %s", el, s)
+		}
+		prev = at
+	}
+	if !strings.Contains(s, "<WysokoscSkonta>5% kwoty należności ogółem</WysokoscSkonta>") {
+		t.Fatalf("zła wartość WysokoscSkonta: %s", s)
+	}
+}
+
+func TestPlatnoscWithoutSkontoOmitsElement(t *testing.T) {
+	out, err := xml.Marshal(Platnosc{FormaPlatnosci: "6"})
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	if strings.Contains(string(out), "Skonto") {
+		t.Fatalf("Skonto nie powinno wystąpić: %s", out)
+	}
+}
+
+func TestPlatnoscSkontoUnmarshal(t *testing.T) {
+	var p Platnosc
+	in := `<Platnosc><FormaPlatnosci>6</FormaPlatnosci><Skonto><WarunkiSkonta>7 dni</WarunkiSkonta><WysokoscSkonta>2%</WysokoscSkonta></Skonto></Platnosc>`
+	if err := xml.Unmarshal([]byte(in), &p); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if p.Skonto == nil || p.Skonto.WarunkiSkonta != "7 dni" || p.Skonto.WysokoscSkonta != "2%" {
+		t.Fatalf("niepoprawne Skonto: %+v", p.Skonto)
+	}
+}
