@@ -85,9 +85,12 @@ type Adres struct {
 	AdresL2  string `xml:"AdresL2"`
 }
 
+// DaneKontaktowe: FA(3) makes the element and both children optional
+// (minOccurs=0), and an empty <Email/> fails the TAdresEmail pattern, so an
+// unknown value is omitted rather than emitted empty.
 type DaneKontaktowe struct {
-	Email   string `xml:"Email"`
-	Telefon string `xml:"Telefon"`
+	Email   string `xml:"Email,omitempty"`
+	Telefon string `xml:"Telefon,omitempty"`
 }
 
 type Fa struct {
