@@ -329,6 +329,28 @@ func TestPlatnoscWithoutSkontoOmitsElement(t *testing.T) {
 	}
 }
 
+// Termin liczony od zdarzenia po wystawieniu: sam TerminOpis, bez pustego <Termin>,
+// a gdy data jest już znana — Termin przed TerminOpis (kolejność XSD).
+func TestTerminPlatnosciOpisMarshal(t *testing.T) {
+	opis := &TerminOpis{Ilosc: 30, Jednostka: "dni", ZdarzeniePoczatkowe: "otrzymania oryginałów dokumentów transportowych"}
+	out, err := xml.Marshal(TerminPlatnosci{TerminOpis: opis})
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	want := "<TerminPlatnosci><TerminOpis><Ilosc>30</Ilosc><Jednostka>dni</Jednostka><ZdarzeniePoczatkowe>otrzymania oryginałów dokumentów transportowych</ZdarzeniePoczatkowe></TerminOpis></TerminPlatnosci>"
+	if string(out) != want {
+		t.Fatalf("got %s, want %s", out, want)
+	}
+
+	out, err = xml.Marshal(TerminPlatnosci{Termin: "2026-12-06", TerminOpis: opis})
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	if !strings.HasPrefix(string(out), "<TerminPlatnosci><Termin>2026-12-06</Termin><TerminOpis>") {
+		t.Fatalf("Termin musi być przed TerminOpis: %s", out)
+	}
+}
+
 func TestPlatnoscSkontoUnmarshal(t *testing.T) {
 	var p Platnosc
 	in := `<Platnosc><FormaPlatnosci>6</FormaPlatnosci><Skonto><WarunkiSkonta>7 dni</WarunkiSkonta><WysokoscSkonta>2%</WysokoscSkonta></Skonto></Platnosc>`
