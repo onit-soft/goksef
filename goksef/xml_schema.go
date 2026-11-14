@@ -332,8 +332,20 @@ type Skonto struct {
 	WysokoscSkonta string `xml:"WysokoscSkonta"`
 }
 
+// TerminPlatnosci — w XSD FA(3) oba elementy są opcjonalne: sama data, sam opis
+// („30 dni od otrzymania dokumentów") albo oba. Opis bez daty to termin, który
+// zaczyna biec od zdarzenia po wystawieniu faktury.
 type TerminPlatnosci struct {
-	Termin string `xml:"Termin"`
+	Termin     string      `xml:"Termin,omitempty"`
+	TerminOpis *TerminOpis `xml:"TerminOpis,omitempty"`
+}
+
+// TerminOpis — termin opisowy: Ilosc jednostek (np. 30 „dni") od ZdarzeniePoczatkowe.
+// W XSD wszystkie trzy pola są obowiązkowe, gdy TerminOpis występuje.
+type TerminOpis struct {
+	Ilosc               int    `xml:"Ilosc"`
+	Jednostka           string `xml:"Jednostka"`
+	ZdarzeniePoczatkowe string `xml:"ZdarzeniePoczatkowe"`
 }
 
 type RachunekBankowy struct {
