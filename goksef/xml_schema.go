@@ -101,7 +101,8 @@ type Fa struct {
 	WZ          string     `xml:"WZ,omitempty"`       // Numer dokumentów WZ
 	// XSD FA(3) 1-0E: element nazywa się OkresFa (nie OkresFA) i jest w xsd:choice z P_6
 	OkresFA     *OkresFA   `xml:"OkresFa,omitempty"`  // Okres którego dotyczy faktura
-	P6          string     `xml:"P_6"`                // Data wykonania usługi
+	// P_6 jest opcjonalne: pomija się je, gdy pozycje mają różne daty (wtedy P_6A w FaWiersz).
+	P6          string     `xml:"P_6,omitempty"`      // Data wykonania usługi
 	P13_1       string     `xml:"P_13_1,omitempty"`   // Wartość netto
 	P14_1       string     `xml:"P_14_1,omitempty"`   // Wartość VAT
 	P14_1W      string     `xml:"P_14_1W,omitempty"`  // Wartość VAT Przeliczona z innej waluty
